@@ -252,27 +252,4 @@ class ReminderService {
       whereArgs: [id, userId],
     );
   }
-
-  Future<List<Map<String, dynamic>>> getMeasurementsByDate(
-      String userId, DateTime date) async {
-    final dateString = DateFormat('yyyy-MM-dd').format(date);
-
-    final result = await db.rawQuery('''
-    SELECT * 
-    FROM measurements_table 
-    WHERE user_id = ? AND (
-      (startDate <= ? AND (endDate IS NULL OR endDate >= ?)) OR
-      isLifelong = 1
-    )
-  ''', [userId, dateString, dateString]);
-
-    // Преобразуем JSON-строки обратно в списки
-    for (var measurement in result) {
-      if (measurement['times'] != null) {
-        measurement['times'] = jsonDecode(measurement['times'] as String);
-      }
-    }
-
-    return result;
-  }
 }

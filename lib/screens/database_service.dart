@@ -687,16 +687,24 @@ CREATE TABLE IF NOT EXISTS measurements_table(
     return statuses;
   }
 
-  Map<String, List<Map<String, dynamic>>> groupMeasurementsByTime(
-      List<Map<String, dynamic>> measurements) {
+  Map<String, List<Map<String, dynamic>>> groupRemindersByTime(
+      List<Map<String, dynamic>> reminders) {
     Map<String, List<Map<String, dynamic>>> grouped = {};
-    for (var measurement in measurements) {
-      final times = measurement['times'] as List<dynamic>? ?? [];
-      for (var time in times) {
+    for (var reminder in reminders) {
+      if (reminder.containsKey('times')) {
+        final times = reminder['times'] as List<dynamic>;
+        for (var time in times) {
+          if (!grouped.containsKey(time)) {
+            grouped[time] = [];
+          }
+          grouped[time]!.add(reminder);
+        }
+      } else {
+        String time = reminder['selectTime'] ?? 'Не указано';
         if (!grouped.containsKey(time)) {
           grouped[time] = [];
         }
-        grouped[time]!.add(measurement);
+        grouped[time]!.add(reminder);
       }
     }
     return grouped;
@@ -803,6 +811,28 @@ CREATE TABLE IF NOT EXISTS measurements_table(
       _instance._reminderService.updateMeasurementStatus(id, isCompleted);
 
   static Future<List<Map<String, dynamic>>> getMeasurementsByDate(
-          String userId, DateTime date) =>
-      _instance._reminderService.getMeasurementsByDate(userId, date);
+      String userId, DateTime date) async {
+    final dateString = DateFormat('yyyy-MM-dd').format(date);
+
+    final result = await DatabaseService.database.rawQuery('''
+    SELECT * 
+    FROM measurements_table 
+    WHERE user_id = ? AND (
+      (startDate <= ? AND (endDate >= ? OR endDate IS NULL)) OR
+      isLifelong = 1
+    )
+  ''', [userId, dateString, dateString]);
+
+    // Преобразуем JSON-строки обратно в списки
+    for (var measurement in result) {
+      if (measurement['times'] != null) {
+        measurement['times'] = jsonDecode(measurement['times'] as String);
+      } else {
+        measurement['times'] = [];
+      }
+    }
+
+    // Преобразуем данные в изменяемый формат
+    return result.map((item) => Map<String, dynamic>.from(item)).toList();
+  }
 }

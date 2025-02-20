@@ -29,49 +29,20 @@ Widget buildReminderGroup(
   DateTime selectedDate,
   Map<int, Map<DateTime, ReminderStatus>> reminderStatuses,
   Function loadReminders,
-  GlobalKey<DateCarouselState> dateCarouselKey, // Указываем тип
+  GlobalKey<DateCarouselState> dateCarouselKey,
 ) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              time,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF0B102B),
-              ),
-            ),
-            InkWell(
-              onTap: () async {
-                print('Accepting all reminders for time: $time');
-                for (var reminder in reminders) {
-                  final reminderId = reminder['id'];
-                  reminderStatuses[reminderId]?[DateTime(
-                    selectedDate.year,
-                    selectedDate.month,
-                    selectedDate.day,
-                  )] = ReminderStatus.complete;
-                }
-                loadReminders();
-                dateCarouselKey.currentState
-                    ?.updateCarousel(); // Теперь работает
-              },
-              child: const Text(
-                "Принять все",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF197FF2),
-                ),
-              ),
-            ),
-          ],
+        child: Text(
+          time,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF0B102B),
+          ),
         ),
       ),
       Container(
@@ -88,21 +59,15 @@ Widget buildReminderGroup(
         ),
         child: Column(
           children: reminders.map((reminder) {
-            if (reminder.containsKey('type') &&
-                reminder['type'] == 'measurement') {
+            if (reminder.containsKey('times')) {
+              // Это измерение
               return buildMeasurementTile(
                 reminder,
                 selectedDate,
                 dateCarouselKey,
               );
-            } else if (reminder.containsKey('type') &&
-                reminder['type'] == 'action') {
-              return buildActionTile(
-                reminder,
-                selectedDate,
-                dateCarouselKey,
-              );
             } else {
+              // Это напоминание о лекарстве или действие
               return buildReminderTile(
                 reminder,
                 selectedDate,
@@ -118,33 +83,35 @@ Widget buildReminderGroup(
   );
 }
 
-// reminder_widgets.dart
 Widget buildMeasurementTile(
   Map<String, dynamic> measurement,
   DateTime selectedDate,
-  GlobalKey<DateCarouselState> dateCarouselKey, // Указываем тип
+  GlobalKey<DateCarouselState> dateCarouselKey,
 ) {
   final name = measurement['name'] ?? 'Название не указано';
   final mealTime = measurement['mealTime'] ?? 'Время приема не указано';
+  final times = measurement['times'] is List<dynamic>
+      ? (measurement['times'] as List<dynamic>).join(', ')
+      : 'Время не указано';
 
   return ListTile(
     title: Text(
       name,
-      style: TextStyle(
+      style: const TextStyle(
         fontSize: 18,
         fontWeight: FontWeight.w600,
-        color: const Color(0xFF0B102B),
+        color: Color(0xFF0B102B),
       ),
     ),
     subtitle: Text(
-      mealTime,
-      style: TextStyle(
+      '$mealTime ($times)',
+      style: const TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w400,
-        color: const Color(0xFF6B7280),
+        color: Color(0xFF6B7280),
       ),
     ),
-    trailing: Icon(Icons.arrow_forward_ios_rounded), // Стрелочка вместо галочки
+    trailing: const Icon(Icons.arrow_forward_ios_rounded),
   );
 }
 

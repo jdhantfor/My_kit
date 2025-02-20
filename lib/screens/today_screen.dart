@@ -41,13 +41,25 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
   Future<void> _loadData() async {
     final userId = Provider.of<UserProvider>(context, listen: false).userId;
     if (userId != null) {
-      _reminders =
+      final remindersRaw =
           await DatabaseService.getRemindersByDate(userId, _selectedDate);
-      _actions = await DatabaseService.getActionsByDate(userId, _selectedDate);
-      _measurements =
+      final actionsRaw =
+          await DatabaseService.getActionsByDate(userId, _selectedDate);
+      final measurementsRaw =
           await DatabaseService.getMeasurementsByDate(userId, _selectedDate);
+
+      setState(() {
+        _reminders = remindersRaw
+            .map((reminder) => Map<String, dynamic>.from(reminder))
+            .toList();
+        _actions = actionsRaw
+            .map((action) => Map<String, dynamic>.from(action))
+            .toList();
+        _measurements = measurementsRaw
+            .map((measurement) => Map<String, dynamic>.from(measurement))
+            .toList();
+      });
     }
-    setState(() {});
   }
 
   @override
@@ -85,13 +97,13 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
           if (!dateStatuses.containsKey(date)) {
             dateStatuses[date] = status;
           } else if (status == ReminderStatus.incomplete) {
-            // If there's at least one incomplete reminder, mark the day as incomplete
             dateStatuses[date] = ReminderStatus.incomplete;
           }
         });
       }
     }
-    return dateStatuses;
+    return Map<DateTime, ReminderStatus>.from(
+        dateStatuses); // Преобразуем в изменяемый формат
   }
 
   Future<void> _loadReminders() async {
@@ -117,10 +129,11 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
         (index) => fifteenDaysAgo.add(Duration(days: index)),
       );
 
-      // Fetch raw statuses from the database
       final Map<int, Map<DateTime, bool?>> rawStatuses =
           await DatabaseService.getReminderStatusesForDates(
               userId, allDatesInCarousel);
+
+      print('Raw statuses from database: $rawStatuses');
 
       setState(() {
         _reminderStatuses = {};
@@ -139,6 +152,8 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
           });
         });
       });
+
+      print('Updated reminder statuses: $_reminderStatuses');
     }
   }
 

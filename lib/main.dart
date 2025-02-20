@@ -11,7 +11,6 @@ import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   // Заблокируем ориентацию экрана в портретном режиме
   Future.delayed(const Duration(milliseconds: 300), () async {
     await SystemChrome.setPreferredOrientations([
@@ -19,14 +18,12 @@ void main() async {
       DeviceOrientation.portraitDown,
     ]);
   });
-
   try {
     await DatabaseService.initializeDatabase();
     await NotificationService.initialize();
   } catch (e) {
     print('Initialization error: $e');
   }
-  ; // Инициализация службы уведомлений
   final userProvider = UserProvider();
   final authService = AuthService();
   // Проверяем статус входа
@@ -51,6 +48,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Аптечка',
       theme: ThemeData(
+        scaffoldBackgroundColor:
+            const Color.fromARGB(255, 247, 247, 247), // Задаем цвет фона
         fontFamily: 'Commissioner',
         textTheme: const TextTheme(
           titleLarge: TextStyle(
@@ -70,6 +69,9 @@ class MyApp extends StatelessWidget {
           ),
         ),
         appBarTheme: const AppBarTheme(
+          color: Colors.white,
+          elevation: 0,
+          iconTheme: IconThemeData(color: Colors.black),
           titleTextStyle: TextStyle(
             fontFamily: 'Commissioner',
             fontWeight: FontWeight.bold,

@@ -33,18 +33,14 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     try {
       final reminders = await DatabaseService.getRemindersByCourseId(
           widget.courseId, widget.userId);
-
-      // Временные переменные для хранения данных до обновления состояния
       List<Map<String, dynamic>> tempReminders = [];
       Map<DateTime, ReminderStatus> tempReminderStatuses = {};
-
       for (final reminder in reminders) {
         final startDate = DateTime.parse(reminder['startDate']);
         final endDate = reminder['endDate'] != null
             ? DateTime.parse(reminder['endDate'])
             : null;
         final isLifelong = reminder['isLifelong'] == 1;
-
         if (!isLifelong && endDate != null) {
           for (var date = startDate;
               date.isBefore(endDate.add(Duration(days: 1)));
@@ -58,11 +54,8 @@ class _CalendarWidgetState extends State<CalendarWidget> {
               reminder['id'], startDate);
           tempReminderStatuses[startDate] = status ?? ReminderStatus.incomplete;
         }
-
         tempReminders.add(reminder);
       }
-
-      // Обновляем состояние после завершения всех асинхронных операций
       setState(() {
         _reminders = tempReminders;
         _reminderStatuses = tempReminderStatuses;
@@ -75,7 +68,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   Widget _buildCalendar() {
     return Column(
       children: [
-        // Оборачиваем список в Column
         ..._buildMonthBlocks(),
       ],
     );
@@ -84,18 +76,17 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   List<Widget> _buildMonthBlocks() {
     final List<Widget> monthBlocks = [];
     DateTime currentDate = DateTime(_selectedDate.year, _selectedDate.month);
-
     while (currentDate
         .isBefore(DateTime(_selectedDate.year + 1, _selectedDate.month + 2))) {
       monthBlocks.add(_buildMonthBlock(currentDate));
       currentDate = DateTime(currentDate.year, currentDate.month + 1);
     }
-
     return monthBlocks;
   }
 
   Widget _buildMonthBlock(DateTime monthDate) {
-    final daysInMonth = DateFormat('MMMM yyyy').format(monthDate);
+    final daysInMonth =
+        DateFormat('MMMM yyyy', 'ru_RU').format(monthDate).capitalize();
     final firstDayOfMonth = DateTime(monthDate.year, monthDate.month, 1);
     final lastDayOfMonth = DateTime(monthDate.year, monthDate.month + 1, 0);
     final weekDays = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
@@ -103,8 +94,7 @@ class _CalendarWidgetState extends State<CalendarWidget> {
 
     // Заполнение недель до начала месяца
     for (int i = firstDayOfMonth.weekday; i > 1; i--) {
-      dayWidgets.add(const SizedBox(
-          width: 42)); // Пустое пространство для предыдущего месяца
+      dayWidgets.add(const SizedBox(width: 42));
     }
 
     // Заполнение дней текущего месяца
@@ -116,28 +106,39 @@ class _CalendarWidgetState extends State<CalendarWidget> {
 
     // Заполнение недель после конца месяца
     for (int i = 0; i < 7 - (lastDayOfMonth.weekday + 1); i++) {
-      dayWidgets.add(const SizedBox(
-          width: 42)); // Пустое пространство для следующего месяца
+      dayWidgets.add(const SizedBox(width: 42));
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(daysInMonth,
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: weekDays
-              .map((day) => Text(day, style: TextStyle(fontSize: 14)))
-              .toList(),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              daysInMonth,
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            Divider(color: Colors.grey), // Тонкая серая линия под заголовком
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: weekDays
+                  .map((day) => Text(day, style: TextStyle(fontSize: 14)))
+                  .toList(),
+            ),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.start,
+              children: dayWidgets,
+            ),
+          ],
         ),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          alignment: WrapAlignment.start,
-          children: dayWidgets,
-        ),
-      ],
+      ),
     );
   }
 
@@ -157,9 +158,8 @@ class _CalendarWidgetState extends State<CalendarWidget> {
         width: 42,
         height: 42,
         decoration: BoxDecoration(
-          color: color.withOpacity(0.2),
+          color: Colors.transparent, // Белый фон без обводки
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey, width: 1),
         ),
         child: Center(
           child: Text(
@@ -176,9 +176,133 @@ class _CalendarWidgetState extends State<CalendarWidget> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: SingleChildScrollView(
-        child: _buildCalendar(),
+      child: Column(
+        children: [
+          Expanded(child: SingleChildScrollView(child: _buildCalendar())),
+          _buildLegend(), // Легенда закреплена снизу поверх самого календаря
+        ],
       ),
     );
+  }
+
+  Widget _buildLegend() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Flexible(
+                  child: Text(
+                    'Выполнены все действия и измерения',
+                    style: TextStyle(fontSize: 14),
+                    textAlign: TextAlign.left,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Flexible(
+                  child: Text(
+                    'Выполнено частично',
+                    style: TextStyle(fontSize: 14),
+                    textAlign: TextAlign.left,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Flexible(
+                  child: Text(
+                    'Ничего не выполнено',
+                    style: TextStyle(fontSize: 14),
+                    textAlign: TextAlign.left,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(Color color, String text) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Flexible(
+          child: Text(
+            text,
+            style: TextStyle(fontSize: 14),
+            textAlign: TextAlign.left,
+            maxLines: 2, // Ограничиваем количество строк для текста
+            overflow:
+                TextOverflow.ellipsis, // Добавляем многоточие при переполнении
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${this.substring(1)}";
   }
 }
