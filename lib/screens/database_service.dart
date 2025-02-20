@@ -3,12 +3,11 @@ import 'package:path/path.dart' as path;
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:convert';
-import 'database/reminder_service.dart'; // Импортируем новый файл
 import 'package:my_aptechka/screens/models/reminder_status.dart';
+import 'package:my_aptechka/services/notification_service.dart';
 
 class DatabaseService {
   static Database? _database;
-  late ReminderService _reminderService;
 
   // Singleton instance
   static final DatabaseService _instance = DatabaseService._internal();
@@ -108,9 +107,6 @@ class DatabaseService {
       },
       version: 12,
     );
-
-    // Инициализируем ReminderService после создания базы данных
-    _instance._reminderService = ReminderService(_database!);
   }
 
   static Future<void> _createTables(Database db) async {
@@ -431,7 +427,7 @@ CREATE TABLE IF NOT EXISTS measurements_table(
         .query('actions_table', where: 'user_id = ?', whereArgs: [userId]);
   }
 
-  static Future<List<Map<String, dynamic>>> getRemindersByDate(
+  Future<List<Map<String, dynamic>>> getRemindersByDate(
       String userId, DateTime date) async {
     final db = database;
     final dateString = DateFormat('yyyy-MM-dd').format(date);
@@ -452,7 +448,7 @@ CREATE TABLE IF NOT EXISTS measurements_table(
     return reminders.where((r) => r['is_scheduled_day'] == 1).toList();
   }
 
-  static Future<void> updateReminderStatus(
+  Future<void> updateReminderStatus(
       int reminderId, bool isCompleted, DateTime date) async {
     await updateReminderCompletionStatus(reminderId, isCompleted, date);
 
@@ -655,7 +651,7 @@ CREATE TABLE IF NOT EXISTS measurements_table(
         limit: 7);
   }
 
-  static Future<Map<int, Map<DateTime, bool?>>> getReminderStatusesForDates(
+  Future<Map<int, Map<DateTime, bool?>>> getReminderStatusesForDates(
       String userId, List<DateTime> dates) async {
     final db = database;
     final Map<int, Map<DateTime, bool?>> statuses = {}; // Изменили тип
@@ -723,65 +719,6 @@ CREATE TABLE IF NOT EXISTS measurements_table(
     }
   }
 
-  static Future<ReminderStatus?> getReminderStatusForDate(
-      int reminderId, DateTime date) async {
-    final db = database;
-    final dateString = DateFormat('yyyy-MM-dd').format(date);
-    final result = await db.query(
-      'reminder_statuses',
-      where: 'reminder_id = ? AND date = ?',
-      whereArgs: [reminderId, dateString],
-      limit: 1,
-    );
-    if (result.isNotEmpty) {
-      final statusValue = result.first['is_completed'];
-      return statusValue == 1
-          ? ReminderStatus.complete
-          : ReminderStatus.incomplete;
-    } else {
-      return null;
-    }
-  }
-
-  // Прокси-методы для обратной совместимости
-  static Future<int> addReminder(
-          Map<String, dynamic> reminder, String userId) =>
-      _instance._reminderService.addReminder(reminder, userId);
-
-  static Future<List<Map<String, dynamic>>> getReminders(String userId) =>
-      _instance._reminderService.getReminders(userId);
-
-  static Future<void> updateReminder(
-          Map<String, dynamic> reminder, String userId) =>
-      _instance._reminderService.updateReminder(reminder, userId);
-
-  static Future<void> deleteReminder(int id, String userId) =>
-      _instance._reminderService.deleteReminder(id, userId);
-
-  static Future<List<Map<String, dynamic>>> getRemindersByCourseId(
-          int courseId, String userId) =>
-      _instance._reminderService.getRemindersByCourseId(courseId, userId);
-
-  static Future<void> updateReminderCompletionStatus(
-          int reminderId, bool isCompleted, DateTime date) =>
-      _instance._reminderService
-          .updateReminderCompletionStatus(reminderId, isCompleted, date);
-
-  static Future<int> addActionOrHabit(
-          Map<String, dynamic> action, String userId) =>
-      _instance._reminderService.addActionOrHabit(action, userId);
-
-  static Future<void> updateAction(
-          Map<String, dynamic> action, String userId) =>
-      _instance._reminderService.updateAction(action, userId);
-
-  static Future<void> updateActionStatus(int id, bool isCompleted) =>
-      _instance._reminderService.updateActionStatus(id, isCompleted);
-
-  static Future<List<Map<String, dynamic>>> getActionsByDate(
-          String userId, DateTime date) =>
-      _instance._reminderService.getActionsByDate(userId, date);
-
   static Future<int> addMeasurement(
       Map<String, dynamic> measurement, String userId) async {
     final Map<String, dynamic> measurementToInsert = {
@@ -796,21 +733,14 @@ CREATE TABLE IF NOT EXISTS measurements_table(
           jsonEncode(measurement['times']), // Преобразуем список времен в JSON
     };
 
-    // Используем _reminderService.db
-    return await _instance._reminderService.db.insert(
+    return await _database!.insert(
       'measurements_table',
       measurementToInsert,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
-  static Future<List<Map<String, dynamic>>> getMeasurements(String userId) =>
-      _instance._reminderService.getMeasurements(userId);
-
-  static Future<void> updateMeasurementStatus(int id, bool isCompleted) =>
-      _instance._reminderService.updateMeasurementStatus(id, isCompleted);
-
-  static Future<List<Map<String, dynamic>>> getMeasurementsByDate(
+  Future<List<Map<String, dynamic>>> getMeasurementsByDate(
       String userId, DateTime date) async {
     final dateString = DateFormat('yyyy-MM-dd').format(date);
 
@@ -834,5 +764,243 @@ CREATE TABLE IF NOT EXISTS measurements_table(
 
     // Преобразуем данные в изменяемый формат
     return result.map((item) => Map<String, dynamic>.from(item)).toList();
+  }
+
+  // Методы для работы с напоминаниями (reminders)
+  Future<int> addReminder(Map<String, dynamic> reminder, String userId) async {
+    final db = database;
+    final Map<String, dynamic> reminderToInsert = {
+      'name': reminder['name'],
+      'time': reminder['time'],
+      'dosage': reminder['dosage'],
+      'unit': reminder['unit'],
+      'selectTime': reminder['selectTime'],
+      'startDate': reminder['startDate'],
+      'endDate': reminder['endDate'],
+      'isLifelong': reminder['isLifelong'],
+      'schedule_type': reminder['schedule_type'],
+      'interval_value': reminder['interval_value'],
+      'interval_unit': reminder['interval_unit'],
+      'selected_days_mask': reminder['selected_days_mask'],
+      'cycle_duration': reminder['cycle_duration'],
+      'cycle_break': reminder['cycle_break'],
+      'cycle_break_unit': reminder['cycle_break_unit'] ?? 'дней',
+      'courseid': reminder['courseid'],
+      'user_id': userId,
+    };
+
+    reminderToInsert
+        .removeWhere((key, value) => key != 'courseid' && value == null);
+
+    final insertedReminderId = await db.insert(
+      'reminders_table',
+      reminderToInsert,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
+    if (reminder['selectTime'] != null && reminder['startDate'] != null) {
+      final timeParts = reminder['selectTime'].toString().split(':');
+      final hour = int.tryParse(timeParts[0]) ?? 0;
+      final minute = int.tryParse(timeParts[1]) ?? 0;
+      final scheduledDate = DateTime(
+        DateTime.parse(reminder['startDate']).year,
+        DateTime.parse(reminder['startDate']).month,
+        DateTime.parse(reminder['startDate']).day,
+        hour,
+        minute,
+      );
+
+      if (scheduledDate.isAfter(DateTime.now())) {
+        await NotificationService.scheduleNotification(
+          id: insertedReminderId,
+          title: 'Напоминание',
+          body: 'Пришло время принять ${reminder['name']}!',
+          scheduledDate: scheduledDate,
+        );
+      }
+    }
+
+    return insertedReminderId;
+  }
+
+  Future<List<Map<String, dynamic>>> getReminders(String userId) async {
+    final db = database;
+    return await db
+        .query('reminders_table', where: 'user_id = ?', whereArgs: [userId]);
+  }
+
+  Future<void> updateReminder(
+      Map<String, dynamic> reminder, String userId) async {
+    final db = database;
+    await db.update(
+      'reminders_table',
+      {...reminder, 'user_id': userId},
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [reminder['id'], userId],
+    );
+  }
+
+  Future<void> deleteReminder(int id, String userId) async {
+    final db = database;
+    await db.delete(
+      'reminders_table',
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [id, userId],
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getRemindersByCourseId(
+      int courseId, String userId) async {
+    final db = database;
+    return await db.query(
+      'reminders_table',
+      where: 'courseid = ? AND user_id = ?',
+      whereArgs: [courseId, userId],
+    );
+  }
+
+  Future<ReminderStatus?> getReminderStatusForDate(
+      int reminderId, DateTime date) async {
+    final dateString = DateFormat('yyyy-MM-dd').format(date);
+    final db = database;
+    final result = await db.query(
+      'reminder_statuses',
+      where: 'reminder_id = ? AND date = ?',
+      whereArgs: [reminderId, dateString],
+      limit: 1,
+    );
+    if (result.isNotEmpty) {
+      final statusValue = result.first['is_completed'];
+      return statusValue == 1
+          ? ReminderStatus.complete
+          : ReminderStatus.incomplete;
+    } else {
+      return null;
+    }
+  }
+
+  Future<void> updateReminderCompletionStatus(
+      int reminderId, bool isCompleted, DateTime date) async {
+    final dateString = DateFormat('yyyy-MM-dd').format(date);
+    final db = database;
+    final reminder = await db.query(
+      'reminders_table',
+      columns: ['user_id'],
+      where: 'id = ?',
+      whereArgs: [reminderId],
+      limit: 1,
+    );
+    if (reminder.isEmpty) {
+      throw Exception('Reminder not found');
+    }
+    final userId = reminder.first['user_id'] as String;
+
+    await db.transaction((txn) async {
+      await txn.insert(
+        'reminder_statuses',
+        {
+          'reminder_id': reminderId,
+          'date': dateString,
+          'is_completed': isCompleted ? 1 : 0,
+          'user_id': userId,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+
+      if (isCompleted) {
+        await NotificationService.cancelNotification(reminderId);
+      }
+    });
+  }
+
+  // Методы для работы с действиями (actions)
+  Future<int> addActionOrHabit(
+      Map<String, dynamic> action, String userId) async {
+    final db = database;
+    action['user_id'] = userId;
+    return await db.insert('actions_table', action);
+  }
+
+  Future<void> updateAction(Map<String, dynamic> action, String userId) async {
+    final db = database;
+    await db.update(
+      'actions_table',
+      {...action, 'user_id': userId},
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [action['id'], userId],
+    );
+  }
+
+  Future<void> updateActionStatus(int id, bool isCompleted) async {
+    final db = database;
+    await db.update(
+      'actions_table',
+      {'is_completed': isCompleted ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getActionsByDate(
+      String userId, DateTime date) async {
+    final db = database;
+    final dateString = DateFormat('yyyy-MM-dd').format(date);
+    return await db.rawQuery('''
+      SELECT * FROM actions_table 
+      WHERE user_id = ? AND startDate <= ? AND (endDate >= ? OR endDate IS NULL)
+    ''', [userId, dateString, dateString]);
+  }
+
+  Future<List<Map<String, dynamic>>> getMeasurements(String userId) async {
+    final db = database;
+    final List<Map<String, dynamic>> result = await db.query(
+      'measurements_table',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+    );
+
+    for (var measurement in result) {
+      measurement['isLifelong'] =
+          measurement['isLifelong'] == 1; // Преобразуем int в bool
+      measurement['times'] =
+          jsonDecode(measurement['times']); // Декодируем JSON обратно в список
+    }
+
+    return result;
+  }
+
+  Future<void> updateMeasurementStatus(int id, bool isCompleted) async {
+    final db = database;
+    await db.update(
+      'measurements_table',
+      {'is_completed': isCompleted ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> updateMeasurement(
+      Map<String, dynamic> measurement, String userId) async {
+    final db = database;
+    await db.update(
+      'measurements_table',
+      {
+        ...measurement,
+        'user_id': userId,
+        'times': jsonEncode(
+            measurement['times']), // Преобразуем список времен в JSON
+      },
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [measurement['id'], userId],
+    );
+  }
+
+  Future<void> deleteMeasurement(int id, String userId) async {
+    final db = database;
+    await db.delete(
+      'measurements_table',
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [id, userId],
+    );
   }
 }

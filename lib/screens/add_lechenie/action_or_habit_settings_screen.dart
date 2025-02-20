@@ -49,7 +49,7 @@ class ActionOrHabitSettingsScreenState
         endDate = _startDate.add(Duration(days: _durationValue - 1));
       } else if (_durationUnit == 'месяцев') {
         endDate = DateTime(
-          _startDate.year + (_durationValue * _startDate.month ~/ 12),
+          _startDate.year + ((_durationValue * _startDate.month) ~/ 12),
           (_startDate.month + _durationValue - 1) % 12 + 1,
           _startDate.day,
         );
@@ -71,7 +71,10 @@ class ActionOrHabitSettingsScreenState
     };
 
     try {
-      await DatabaseService.addActionOrHabit(actionData, widget.userId);
+      // Используем синглтон-экземпляр DatabaseService
+      final databaseService = DatabaseService(); // Получаем экземпляр синглтона
+      await databaseService.addActionOrHabit(actionData, widget.userId);
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Действие/привычка добавлена')),
       );

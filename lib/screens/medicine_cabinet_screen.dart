@@ -204,18 +204,21 @@ class _MedicineCabinetScreenState extends State<MedicineCabinetScreen> {
           // Кнопка "Сначала те, что в дефиците"
           ElevatedButton.icon(
             icon: const Icon(Icons.swap_vert, color: Colors.black),
-            label: const Text('Сначала те, что в дефиците',
-                style: TextStyle(color: Colors.black)),
+            label: const Text(
+              'Сначала те, что в дефиците',
+              style: TextStyle(color: Colors.black),
+            ),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.grey[300],
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24), // Скругление 24
+                borderRadius: BorderRadius.circular(24),
               ),
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 8, vertical: 10), // Уменьшенные отступы
-              minimumSize: const Size(200, 40), // Уменьшенная ширина
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+              minimumSize: const Size(200, 40),
             ),
-            onPressed: () => _sortMedicinesByDeficit(),
+            onPressed: () {
+              _sortMedicinesByDeficit(); // Вызываем метод сортировки
+            },
           ),
         ],
       ),
@@ -225,7 +228,8 @@ class _MedicineCabinetScreenState extends State<MedicineCabinetScreen> {
   void _sortMedicinesByDeficit() {
     setState(() {
       medicinesList.sort((a, b) {
-        int countA = a['packageCount'] ?? 0;
+        int countA = a['packageCount'] ??
+            0; // Если packageCount отсутствует, считаем его равным 0
         int countB = b['packageCount'] ?? 0;
         return countA.compareTo(countB); // Сортировка по возрастанию
       });

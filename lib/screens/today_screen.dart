@@ -5,7 +5,6 @@ import 'today/empty_state_widget.dart';
 import 'database_service.dart';
 import 'profile_screen.dart';
 import 'today/custom_dropdown.dart';
-import 'add_lechenie/add_treatment_screen.dart';
 import 'user_provider.dart';
 import 'today/date_carousel.dart'; // Импортируем DateCarousel из нового файла
 import 'models/reminder_status.dart';
@@ -41,12 +40,13 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
   Future<void> _loadData() async {
     final userId = Provider.of<UserProvider>(context, listen: false).userId;
     if (userId != null) {
+      final databaseService = DatabaseService(); // Создаем экземпляр
       final remindersRaw =
-          await DatabaseService.getRemindersByDate(userId, _selectedDate);
+          await databaseService.getRemindersByDate(userId, _selectedDate);
       final actionsRaw =
-          await DatabaseService.getActionsByDate(userId, _selectedDate);
+          await databaseService.getActionsByDate(userId, _selectedDate);
       final measurementsRaw =
-          await DatabaseService.getMeasurementsByDate(userId, _selectedDate);
+          await databaseService.getMeasurementsByDate(userId, _selectedDate);
 
       setState(() {
         _reminders = remindersRaw
@@ -71,7 +71,8 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
   Future<List<Map<String, dynamic>>> _loadActions() async {
     final userId = Provider.of<UserProvider>(context, listen: false).userId;
     if (userId != null) {
-      return await DatabaseService.getActionsByDate(userId, _selectedDate);
+      final databaseService = DatabaseService(); // Создаем экземпляр
+      return await databaseService.getActionsByDate(userId, _selectedDate);
     }
     return [];
   }
@@ -79,7 +80,8 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
   Future<List<Map<String, dynamic>>> _loadMeasurements() async {
     final userId = Provider.of<UserProvider>(context, listen: false).userId;
     if (userId != null) {
-      return await DatabaseService.getMeasurementsByDate(userId, _selectedDate);
+      final databaseService = DatabaseService(); // Создаем экземпляр
+      return await databaseService.getMeasurementsByDate(userId, _selectedDate);
     }
     return [];
   }
@@ -109,8 +111,9 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
   Future<void> _loadReminders() async {
     final userId = Provider.of<UserProvider>(context, listen: false).userId;
     if (userId != null) {
+      final databaseService = DatabaseService(); // Создаем экземпляр
       final reminders =
-          await DatabaseService.getRemindersByDate(userId, _selectedDate);
+          await databaseService.getRemindersByDate(userId, _selectedDate);
       setState(() {
         _reminders = reminders
             .map((reminder) => Map<String, dynamic>.from(reminder))
@@ -129,9 +132,9 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
         (index) => fifteenDaysAgo.add(Duration(days: index)),
       );
 
-      final Map<int, Map<DateTime, bool?>> rawStatuses =
-          await DatabaseService.getReminderStatusesForDates(
-              userId, allDatesInCarousel);
+      final databaseService = DatabaseService(); // Создаем экземпляр
+      final rawStatuses = await databaseService.getReminderStatusesForDates(
+          userId, allDatesInCarousel);
 
       print('Raw statuses from database: $rawStatuses');
 
@@ -162,23 +165,6 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
       _selectedDate = date;
     });
     _loadData();
-  }
-
-  void _navigateToAddTreatmentScreen() {
-    final userId = Provider.of<UserProvider>(context, listen: false).userId;
-    if (userId != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => AddTreatmentScreen(userId: userId),
-        ),
-      ).then((_) {
-        _loadData();
-        _dateCarouselKey.currentState?.scrollToToday();
-      });
-    } else {
-      print('User is not logged in');
-    }
   }
 
   @override

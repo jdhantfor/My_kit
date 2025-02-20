@@ -151,8 +151,8 @@ class _TableTimeScreenState extends State<TableTimeScreen> {
     reminderData.removeWhere((key, value) => value == null);
 
     // Добавляем напоминание в базу данных
-    await DatabaseService.addReminder(reminderData, userId);
-
+    final databaseService = DatabaseService(); // Получаем экземпляр синглтона
+    await databaseService.addReminder(reminderData, userId);
     // Переходим на главный экран после успешного добавления
     Navigator.pushReplacement(
       context,

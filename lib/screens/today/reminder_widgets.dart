@@ -196,7 +196,10 @@ Widget buildReminderTile(
     trailing: Checkbox(
       value: isCompleted,
       onChanged: (bool? value) async {
-        await DatabaseService.updateReminderCompletionStatus(
+        // Используем синглтон-экземпляр DatabaseService
+        final databaseService =
+            DatabaseService(); // Получаем экземпляр синглтона
+        await databaseService.updateReminderCompletionStatus(
           reminderId,
           value ?? false,
           selectedDate,

@@ -95,10 +95,12 @@ class AddLechenieItemsScreen extends StatelessWidget {
   }
 
   void _showAddReminderBottomSheet(BuildContext context) async {
-    final unassignedReminders = await DatabaseService.getRemindersByDate(
+    final databaseService = DatabaseService(); // Получаем экземпляр синглтона
+    final unassignedReminders = await databaseService.getRemindersByDate(
       userId,
       DateTime.now(), // Любая дата, так как мы ищем непривязанные напоминания
     );
+
     if (unassignedReminders.isNotEmpty) {
       showModalBottomSheet(
         context: context,
@@ -171,8 +173,9 @@ class AddLechenieItemsScreen extends StatelessWidget {
                         title: reminder['name'],
                         iconPath: 'assets/priem_gray.svg',
                         onTap: () async {
-                          Navigator.pop(context); // Закрываем bottom sheet
-                          await DatabaseService.updateReminder(
+                          Navigator.pop(context);
+                          final databaseService = DatabaseService();
+                          await databaseService.updateReminder(
                             Map.from(reminder)..['courseid'] = courseId,
                             userId,
                           );

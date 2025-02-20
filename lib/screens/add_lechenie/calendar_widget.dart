@@ -31,31 +31,37 @@ class _CalendarWidgetState extends State<CalendarWidget> {
 
   Future<void> _loadRemindersAndStatuses() async {
     try {
-      final reminders = await DatabaseService.getRemindersByCourseId(
+      final databaseService =
+          DatabaseService(); // Создаем экземпляр (или используем синглтон)
+      final reminders = await databaseService.getRemindersByCourseId(
           widget.courseId, widget.userId);
       List<Map<String, dynamic>> tempReminders = [];
       Map<DateTime, ReminderStatus> tempReminderStatuses = {};
+
       for (final reminder in reminders) {
         final startDate = DateTime.parse(reminder['startDate']);
         final endDate = reminder['endDate'] != null
             ? DateTime.parse(reminder['endDate'])
             : null;
         final isLifelong = reminder['isLifelong'] == 1;
+
         if (!isLifelong && endDate != null) {
           for (var date = startDate;
               date.isBefore(endDate.add(Duration(days: 1)));
               date = date.add(Duration(days: 1))) {
-            final status = await DatabaseService.getReminderStatusForDate(
+            final status = await databaseService.getReminderStatusForDate(
                 reminder['id'], date);
             tempReminderStatuses[date] = status ?? ReminderStatus.incomplete;
           }
         } else {
-          final status = await DatabaseService.getReminderStatusForDate(
+          final status = await databaseService.getReminderStatusForDate(
               reminder['id'], startDate);
           tempReminderStatuses[startDate] = status ?? ReminderStatus.incomplete;
         }
+
         tempReminders.add(reminder);
       }
+
       setState(() {
         _reminders = tempReminders;
         _reminderStatuses = tempReminderStatuses;
@@ -270,33 +276,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildLegendItem(Color color, String text) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Flexible(
-          child: Text(
-            text,
-            style: TextStyle(fontSize: 14),
-            textAlign: TextAlign.left,
-            maxLines: 2, // Ограничиваем количество строк для текста
-            overflow:
-                TextOverflow.ellipsis, // Добавляем многоточие при переполнении
-          ),
-        ),
-      ],
     );
   }
 }

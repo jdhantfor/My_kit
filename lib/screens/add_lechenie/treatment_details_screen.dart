@@ -34,7 +34,9 @@ class _TreatmentDetailsScreenState extends State<TreatmentDetailsScreen> {
 
   Future<void> _loadReminders() async {
     try {
-      final reminders = await DatabaseService.getRemindersByCourseId(
+      // Используем синглтон-экземпляр DatabaseService
+      final databaseService = DatabaseService(); // Получаем экземпляр синглтона
+      final reminders = await databaseService.getRemindersByCourseId(
           widget.course['id'], widget.userId);
       setState(() {
         _reminders = reminders;
