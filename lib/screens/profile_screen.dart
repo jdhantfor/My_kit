@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart'; // Добавляем пакет для выбора изображений
+import 'package:my_aptechka/screens/user_provider.dart';
+import 'package:provider/provider.dart';
 import 'today/invite.dart';
 import 'package:my_aptechka/screens/profile_settings_screen.dart';
 import 'setting/smart_bandsettings_screen.dart';
@@ -172,7 +174,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   const Text(
-                    'Константин',
+                    'Мое имя',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
                   ),
                   const SizedBox(height: 8),
@@ -317,6 +319,8 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildWideBox(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -338,27 +342,34 @@ class ProfileScreen extends StatelessWidget {
           children: [
             Image.asset('assets/famaly.png', width: 24, height: 24),
             const SizedBox(height: 8),
-            const Text('Настройки семьи',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Настройки семьи',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 16),
-            const Row(
+            Row(
               children: [
                 CircleAvatar(
                   radius: 20,
-                  backgroundColor: Color.fromARGB(255, 197, 197, 197),
-                  child: Icon(
+                  backgroundColor: const Color.fromARGB(255, 197, 197, 197),
+                  child: const Icon(
                     Icons.person,
                     size: 24,
                     color: Color.fromARGB(255, 148, 147, 147),
                   ),
                 ),
-                SizedBox(width: 16),
+                const SizedBox(width: 16),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('ВЫ', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('+7(999) 999-99-99',
-                        style: TextStyle(color: Colors.grey)),
+                    Text(
+                      userProvider.name ?? 'Имя не указано',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      userProvider.email ?? 'Email не указан',
+                      style: const TextStyle(color: Colors.grey),
+                    ),
                   ],
                 ),
               ],
@@ -374,8 +385,10 @@ class ProfileScreen extends StatelessWidget {
                     child: const Icon(Icons.add, color: Colors.blue),
                   ),
                   const SizedBox(width: 16),
-                  const Text('Пригласить участника',
-                      style: TextStyle(color: Colors.blue)),
+                  const Text(
+                    'Пригласить участника',
+                    style: TextStyle(color: Colors.blue),
+                  ),
                 ],
               ),
             ),

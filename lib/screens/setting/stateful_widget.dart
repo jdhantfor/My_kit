@@ -46,7 +46,7 @@ class _NotificationsSettingsScreenState
             const SizedBox(height: 8),
             _buildSettingItem(
               'Истечение срока годности',
-              subtitle: 'напомним, когда препарат станет непригодным',
+              subtitle: 'напомним, когда препарат\nстанет непригодным',
               value: expirationNotifications,
               onChanged: (value) {
                 setState(() {

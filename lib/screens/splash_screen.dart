@@ -18,22 +18,32 @@ class _SplashScreenState extends State<SplashScreen> {
   final TextEditingController _passwordController = TextEditingController();
 
   void _login() async {
-    final String email = _emailController.text;
-    final String password = _passwordController.text;
+  final String email = _emailController.text;
+  final String password = _passwordController.text;
 
-    if (email.isNotEmpty && password.isNotEmpty) {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
+  if (email.isNotEmpty && password.isNotEmpty) {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-      // Просто устанавливаем статус "залогинен"
-      await authService.setLoggedIn(userProvider);
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
-    } else {
-      _showMessage('Введите почту и пароль');
-    }
+    // Создаем пользователя в базе данных
+    final userId = await DatabaseService.createUser(email, password);
+
+    // Устанавливаем данные в UserProvider
+    userProvider.setUserId(userId);
+    userProvider.setEmail(email);
+    userProvider.setPassword(password);
+
+    // Устанавливаем статус "залогинен"
+    await authService.setLoggedIn(userProvider);
+
+    // Переходим на главный экран
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
+    );
+  } else {
+    _showMessage('Введите почту и пароль');
   }
+}
 
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();

@@ -19,6 +19,7 @@ class BarcodesScreen extends StatefulWidget {
 class _BarcodesScreenState extends State<BarcodesScreen> {
   late PostgreSQLConnection _conn;
   MobileScannerController cameraController = MobileScannerController();
+  bool isScanning = false; // Флаг для контроля состояния сканирования
 
   @override
   void initState() {
@@ -55,13 +56,23 @@ class _BarcodesScreenState extends State<BarcodesScreen> {
   }
 
   Future<void> _processScannedCode(String scannedCode) async {
+    if (isScanning)
+      return; // Если уже идет процесс сканирования, игнорируем новый код
+    setState(() => isScanning = true);
+
     try {
       final results = await _conn.query(
         'SELECT "Name" FROM "Medicines" WHERE "Barcodes" = @barcode',
         substitutionValues: {'barcode': int.parse(scannedCode)},
       );
+
       if (results.isNotEmpty) {
         final medicineName = results.first[0] as String;
+
+        // Останавливаем камеру
+        cameraController.stop();
+
+        // Переходим на следующий экран
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -71,13 +82,24 @@ class _BarcodesScreenState extends State<BarcodesScreen> {
               courseId: widget.courseId,
             ),
           ),
-        );
+        ).then((_) {
+          // После возвращения с другого экрана возобновляем сканирование
+          cameraController.start();
+          setState(() => isScanning = false);
+        });
       } else {
+        // Если код не найден, добавляем задержку перед новым сканированием
+        await Future.delayed(const Duration(seconds: 2));
         _navigateToMedicineSearch();
       }
     } catch (e) {
       print('Error processing scanned code: $e');
+      await Future.delayed(const Duration(seconds: 2));
       _navigateToMedicineSearch();
+    } finally {
+      // Сбрасываем флаг через некоторое время
+      await Future.delayed(const Duration(seconds: 2));
+      setState(() => isScanning = false);
     }
   }
 
@@ -100,10 +122,12 @@ class _BarcodesScreenState extends State<BarcodesScreen> {
         children: [
           MobileScanner(
             controller: cameraController,
-            onDetect: (capture) {
+            onDetect: (capture) async {
               final List<Barcode> barcodes = capture.barcodes;
               for (final barcode in barcodes) {
-                _processScannedCode(barcode.rawValue ?? '');
+                if (!isScanning) {
+                  await _processScannedCode(barcode.rawValue ?? '');
+                }
               }
             },
           ),
@@ -119,9 +143,10 @@ class _BarcodesScreenState extends State<BarcodesScreen> {
                   Text(
                     'Отсканируйте штрих код',
                     style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                    ),
                   ),
                 ],
               ),
@@ -138,9 +163,10 @@ class _BarcodesScreenState extends State<BarcodesScreen> {
                   child: Text(
                     'Наведите камеру на штрих-код препарата',
                     style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500),
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
                 Row(

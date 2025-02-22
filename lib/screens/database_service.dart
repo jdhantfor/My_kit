@@ -29,12 +29,12 @@ class DatabaseService {
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 6) {
           await db.execute('''
-            CREATE TABLE IF NOT EXISTS users(
-              id TEXT PRIMARY KEY,
-              phone TEXT UNIQUE,
-              is_logged_in INTEGER
-            )
-          ''');
+          CREATE TABLE IF NOT EXISTS users(
+            id TEXT PRIMARY KEY,
+            phone TEXT UNIQUE,
+            is_logged_in INTEGER
+          )
+        ''');
           await db.execute(
               'ALTER TABLE medicines_table ADD COLUMN user_id TEXT REFERENCES users(id)');
           await db.execute(
@@ -76,36 +76,42 @@ class DatabaseService {
         }
         if (oldVersion < 10) {
           await db.execute('''
-            CREATE TABLE IF NOT EXISTS measurements_table(
-              id INTEGER PRIMARY KEY,
-              name TEXT,
-              startDate TEXT,
-              endDate TEXT,
-              isLifelong INTEGER,
-              courseid INTEGER REFERENCES courses_table(id),
-              user_id TEXT REFERENCES users(id),
-              mealTime TEXT
-            )
-          ''');
+          CREATE TABLE IF NOT EXISTS measurements_table(
+            id INTEGER PRIMARY KEY,
+            name TEXT,
+            startDate TEXT,
+            endDate TEXT,
+            isLifelong INTEGER,
+            courseid INTEGER REFERENCES courses_table(id),
+            user_id TEXT REFERENCES users(id),
+            mealTime TEXT
+          )
+        ''');
           await db.execute('''
-            CREATE TABLE IF NOT EXISTS actions_table(
-              id INTEGER PRIMARY KEY,
-              name TEXT,
-              startDate TEXT,
-              endDate TEXT,
-              isLifelong INTEGER,
-              courseid INTEGER REFERENCES courses_table(id),
-              user_id TEXT REFERENCES users(id),
-              mealTime TEXT
-            )
-          ''');
+          CREATE TABLE IF NOT EXISTS actions_table(
+            id INTEGER PRIMARY KEY,
+            name TEXT,
+            startDate TEXT,
+            endDate TEXT,
+            isLifelong INTEGER,
+            courseid INTEGER REFERENCES courses_table(id),
+            user_id TEXT REFERENCES users(id),
+            mealTime TEXT
+          )
+        ''');
         }
         if (oldVersion < 12) {
           await db
               .execute('ALTER TABLE measurements_table ADD COLUMN times TEXT');
         }
+
+        // Добавляем новые колонки name и surname
+        if (oldVersion < 13) {
+          await db.execute('ALTER TABLE users ADD COLUMN name TEXT');
+          await db.execute('ALTER TABLE users ADD COLUMN surname TEXT');
+        }
       },
-      version: 12,
+      version: 13, // Увеличиваем версию базы данных
     );
   }
 
@@ -115,125 +121,127 @@ class DatabaseService {
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE,
       password TEXT,
-      is_logged_in INTEGER
+      is_logged_in INTEGER,
+      name TEXT,       -- Новая колонка
+      surname TEXT     -- Новая колонка
     )
   ''');
     await db.execute('''
-CREATE TABLE IF NOT EXISTS measurements_table(
-  id INTEGER PRIMARY KEY,
-  name TEXT,
-  startDate TEXT,
-  endDate TEXT,
-  isLifelong INTEGER,
-  courseid INTEGER DEFAULT -1,
-  user_id TEXT REFERENCES users(id),
-  mealTime TEXT,
-  times TEXT
-)
-''');
+    CREATE TABLE IF NOT EXISTS measurements_table(
+      id INTEGER PRIMARY KEY,
+      name TEXT,
+      startDate TEXT,
+      endDate TEXT,
+      isLifelong INTEGER,
+      courseid INTEGER DEFAULT -1,
+      user_id TEXT REFERENCES users(id),
+      mealTime TEXT,
+      times TEXT
+    )
+  ''');
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS actions_table(
-        id INTEGER PRIMARY KEY,
-        name TEXT,
-        startDate TEXT,
-        endDate TEXT,
-        isLifelong INTEGER,
-        courseid INTEGER REFERENCES courses_table(id),
-        user_id TEXT REFERENCES users(id),
-        mealTime TEXT,
-        times TEXT
-      )
-    ''');
+    CREATE TABLE IF NOT EXISTS actions_table(
+      id INTEGER PRIMARY KEY,
+      name TEXT,
+      startDate TEXT,
+      endDate TEXT,
+      isLifelong INTEGER,
+      courseid INTEGER REFERENCES courses_table(id),
+      user_id TEXT REFERENCES users(id),
+      mealTime TEXT,
+      times TEXT
+    )
+  ''');
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS medicines_table(
-        id INTEGER PRIMARY KEY, 
-        name TEXT, 
-        releaseForm TEXT, 
-        quantityInPackage TEXT, 
-        imagePath TEXT, 
-        packageCount INTEGER, 
-        user_id TEXT REFERENCES users(id)
-      )
-    ''');
+    CREATE TABLE IF NOT EXISTS medicines_table(
+      id INTEGER PRIMARY KEY, 
+      name TEXT, 
+      releaseForm TEXT, 
+      quantityInPackage TEXT, 
+      imagePath TEXT, 
+      packageCount INTEGER, 
+      user_id TEXT REFERENCES users(id)
+    )
+  ''');
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS courses_table(
-        id INTEGER PRIMARY KEY, 
-        name TEXT, 
-        user_id TEXT REFERENCES users(id)
-      )
-    ''');
+    CREATE TABLE IF NOT EXISTS courses_table(
+      id INTEGER PRIMARY KEY, 
+      name TEXT, 
+      user_id TEXT REFERENCES users(id)
+    )
+  ''');
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS course_medicines(
-        id INTEGER PRIMARY KEY,
-        courseid INTEGER REFERENCES courses_table(id),
-        medicine_id INTEGER REFERENCES medicines_table(id),
-        dosage TEXT,
-        unit TEXT,
-        user_id TEXT REFERENCES users(id)
-      )
-    ''');
+    CREATE TABLE IF NOT EXISTS course_medicines(
+      id INTEGER PRIMARY KEY,
+      courseid INTEGER REFERENCES courses_table(id),
+      medicine_id INTEGER REFERENCES medicines_table(id),
+      dosage TEXT,
+      unit TEXT,
+      user_id TEXT REFERENCES users(id)
+    )
+  ''');
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS reminders_table(
-        id INTEGER PRIMARY KEY, 
-        name TEXT,  
-        time TEXT, 
-        dosage TEXT, 
-        unit TEXT, 
-        selectTime TEXT, 
-        startDate TEXT, 
-        endDate TEXT,
-        isLifelong INTEGER,
-        schedule_type TEXT,
-        interval_value INTEGER,
-        interval_unit TEXT,
-        selected_days_mask INTEGER,
-        cycle_duration INTEGER,
-        cycle_break INTEGER,
-        cycle_break_unit TEXT,
-        courseid INTEGER REFERENCES courses_table(id), 
-        user_id TEXT REFERENCES users(id)
-      )
-    ''');
+    CREATE TABLE IF NOT EXISTS reminders_table(
+      id INTEGER PRIMARY KEY, 
+      name TEXT,  
+      time TEXT, 
+      dosage TEXT, 
+      unit TEXT, 
+      selectTime TEXT, 
+      startDate TEXT, 
+      endDate TEXT,
+      isLifelong INTEGER,
+      schedule_type TEXT,
+      interval_value INTEGER,
+      interval_unit TEXT,
+      selected_days_mask INTEGER,
+      cycle_duration INTEGER,
+      cycle_break INTEGER,
+      cycle_break_unit TEXT,
+      courseid INTEGER REFERENCES courses_table(id), 
+      user_id TEXT REFERENCES users(id)
+    )
+  ''');
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS reminder_statuses(
-        id INTEGER PRIMARY KEY,
-        reminder_id INTEGER REFERENCES reminders_table(id),
-        date TEXT,
-        is_completed INTEGER,
-        user_id TEXT REFERENCES users(id)
-      )
-    ''');
+    CREATE TABLE IF NOT EXISTS reminder_statuses(
+      id INTEGER PRIMARY KEY,
+      reminder_id INTEGER REFERENCES reminders_table(id),
+      date TEXT,
+      is_completed INTEGER,
+      user_id TEXT REFERENCES users(id)
+    )
+  ''');
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS pulse_data(
-        id INTEGER PRIMARY KEY, 
-        date TEXT, 
-        value INTEGER, 
-        user_id TEXT REFERENCES users(id),
-        systolic INTEGER,
-        diastolic INTEGER,
-        comment TEXT
-      )
-    ''');
+    CREATE TABLE IF NOT EXISTS pulse_data(
+      id INTEGER PRIMARY KEY, 
+      date TEXT, 
+      value INTEGER, 
+      user_id TEXT REFERENCES users(id),
+      systolic INTEGER,
+      diastolic INTEGER,
+      comment TEXT
+    )
+  ''');
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS blood_pressure_data(
-        id INTEGER PRIMARY KEY, 
-        date TEXT, 
-        systolic INTEGER, 
-        diastolic INTEGER, 
-        user_id TEXT REFERENCES users(id),
-        pulse INTEGER,
-        comment TEXT
-      )
-    ''');
+    CREATE TABLE IF NOT EXISTS blood_pressure_data(
+      id INTEGER PRIMARY KEY, 
+      date TEXT, 
+      systolic INTEGER, 
+      diastolic INTEGER, 
+      user_id TEXT REFERENCES users(id),
+      pulse INTEGER,
+      comment TEXT
+    )
+  ''');
     await db.execute('''
-      CREATE TABLE IF NOT EXISTS steps_data(
-        id INTEGER PRIMARY KEY, 
-        date TEXT, 
-        count INTEGER, 
-        user_id TEXT REFERENCES users(id),
-        comment TEXT
-      )
-    ''');
+    CREATE TABLE IF NOT EXISTS steps_data(
+      id INTEGER PRIMARY KEY, 
+      date TEXT, 
+      count INTEGER, 
+      user_id TEXT REFERENCES users(id),
+      comment TEXT
+    )
+  ''');
   }
 
   static Future<void> clearDatabase() async {
@@ -259,6 +267,29 @@ CREATE TABLE IF NOT EXISTS measurements_table(
     return userId;
   }
 
+  static Future<void> updateUserDetails(String userId,
+      {String? name,
+      String? surname,
+      String? phone,
+      String? email,
+      String? password}) async {
+    final db = database;
+    final Map<String, dynamic> updates = {};
+
+    if (name != null) updates['name'] = name;
+    if (surname != null) updates['surname'] = surname;
+    if (phone != null) updates['phone'] = phone;
+    if (email != null) updates['email'] = email;
+    if (password != null) updates['password'] = password;
+
+    await db.update(
+      'users',
+      updates,
+      where: 'id = ?',
+      whereArgs: [userId],
+    );
+  }
+
   static Future<String?> getUserIdByEmail(String email) async {
     final db = database;
     final result = await db.query(
@@ -268,6 +299,17 @@ CREATE TABLE IF NOT EXISTS measurements_table(
       limit: 1,
     );
     return result.isNotEmpty ? result.first['id'] as String : null;
+  }
+
+  static Future<Map<String, dynamic>?> getUserDetails(String userId) async {
+    final db = database;
+    final result = await db.query(
+      'users',
+      where: 'id = ?',
+      whereArgs: [userId],
+      limit: 1,
+    );
+    return result.isNotEmpty ? result.first : null;
   }
 
   static Future<String?> getUserIdByEmailAndPassword(

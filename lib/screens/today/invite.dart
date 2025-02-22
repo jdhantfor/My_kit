@@ -5,6 +5,8 @@ class InviteScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final TextEditingController _emailController = TextEditingController();
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -20,7 +22,7 @@ class InviteScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Укажите телефон близкого',
+              'Укажите email близкого',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -34,10 +36,24 @@ class InviteScreen extends StatelessWidget {
                 color: Colors.grey,
               ),
             ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                labelText: 'Email',
+                filled: true,
+                fillColor: Colors.grey[200],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
             const Spacer(),
             ElevatedButton(
               onPressed: () {
-                // Действие при нажатии на кнопку "Пригласить"
+                // Пока без логики отправки, просто возвращаемся назад
+                Navigator.of(context).pop();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
