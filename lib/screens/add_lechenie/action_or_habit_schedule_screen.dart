@@ -29,7 +29,7 @@ class _ActionOrHabitScheduleScreenState
   String _durationUnit = 'дней';
   int _breakValue = 7;
   String _breakUnit = 'дней';
-  List<String> _selectedDays = [];
+  final List<String> _selectedDays = [];
   String _scheduleType = 'interval'; // Default schedule type
 
   DateTime? _singleExecutionDate;

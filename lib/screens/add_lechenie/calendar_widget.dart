@@ -47,8 +47,8 @@ class _CalendarWidgetState extends State<CalendarWidget> {
 
         if (!isLifelong && endDate != null) {
           for (var date = startDate;
-              date.isBefore(endDate.add(Duration(days: 1)));
-              date = date.add(Duration(days: 1))) {
+              date.isBefore(endDate.add(const Duration(days: 1)));
+              date = date.add(const Duration(days: 1))) {
             final status = await databaseService.getReminderStatusForDate(
                 reminder['id'], date);
             tempReminderStatuses[date] = status ?? ReminderStatus.incomplete;
@@ -105,8 +105,8 @@ class _CalendarWidgetState extends State<CalendarWidget> {
 
     // Заполнение дней текущего месяца
     for (DateTime date = firstDayOfMonth;
-        date.isBefore(lastDayOfMonth.add(Duration(days: 1)));
-        date = date.add(Duration(days: 1))) {
+        date.isBefore(lastDayOfMonth.add(const Duration(days: 1)));
+        date = date.add(const Duration(days: 1))) {
       dayWidgets.add(_buildDayTile(date));
     }
 
@@ -282,6 +282,6 @@ class _CalendarWidgetState extends State<CalendarWidget> {
 
 extension StringExtension on String {
   String capitalize() {
-    return "${this[0].toUpperCase()}${this.substring(1)}";
+    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }

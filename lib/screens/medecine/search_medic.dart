@@ -63,8 +63,6 @@ class _SearchMedicScreenState extends State<SearchMedicScreen> {
 
   Future<void> _loadAllMedicines() async {
     // Проверяем, что соединение установлено и открыто
-    if (_conn == null) return; // Исправлено: заменено на isOpened
-
     try {
       final results = await _conn.query(
           'SELECT id, "Name", "ImagePath", "ReleaseForm" FROM "Medicines"');

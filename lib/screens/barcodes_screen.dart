@@ -3,8 +3,8 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:postgres/postgres.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'table_method_screen.dart';
-import 'medicine_search_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'medicine_search_screen.dart';
 
 class BarcodesScreen extends StatefulWidget {
   final String userId;
@@ -19,7 +19,7 @@ class BarcodesScreen extends StatefulWidget {
 class _BarcodesScreenState extends State<BarcodesScreen> {
   late PostgreSQLConnection _conn;
   MobileScannerController cameraController = MobileScannerController();
-  bool isScanning = false; // Флаг для контроля состояния сканирования
+  bool isScanning = false;
 
   @override
   void initState() {
@@ -56,8 +56,9 @@ class _BarcodesScreenState extends State<BarcodesScreen> {
   }
 
   Future<void> _processScannedCode(String scannedCode) async {
-    if (isScanning)
+    if (isScanning) {
       return; // Если уже идет процесс сканирования, игнорируем новый код
+    }
     setState(() => isScanning = true);
 
     try {
@@ -72,7 +73,7 @@ class _BarcodesScreenState extends State<BarcodesScreen> {
         // Останавливаем камеру
         cameraController.stop();
 
-        // Переходим на следующий экран
+        // Переходим на TableMethodScreen
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -90,17 +91,43 @@ class _BarcodesScreenState extends State<BarcodesScreen> {
       } else {
         // Если код не найден, добавляем задержку перед новым сканированием
         await Future.delayed(const Duration(seconds: 2));
-        _navigateToMedicineSearch();
+        _showNoMedicineFoundDialog(); // Показываем диалог вместо перехода на MedicineSearchScreen
       }
     } catch (e) {
       print('Error processing scanned code: $e');
       await Future.delayed(const Duration(seconds: 2));
-      _navigateToMedicineSearch();
+      _showNoMedicineFoundDialog(); // Показываем диалог вместо перехода на MedicineSearchScreen
     } finally {
       // Сбрасываем флаг через некоторое время
       await Future.delayed(const Duration(seconds: 2));
       setState(() => isScanning = false);
     }
+  }
+
+  // Новый метод для отображения диалога, если лекарство не найдено
+  void _showNoMedicineFoundDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Лекарство не найдено'),
+        content: const Text('Штрих-код не соответствует ни одному лекарству. Хотите найти вручную?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Закрываем диалог
+            },
+            child: const Text('Отмена'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context); // Закрываем диалог
+              _navigateToMedicineSearch(); // Переходим на поиск вручную
+            },
+            child: const Text('Найти вручную'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _navigateToMedicineSearch() {

@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'; // Добавляем этот импорт
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -8,9 +9,16 @@ import 'screens/database_service.dart';
 import 'services/auth_service.dart';
 import 'package:my_aptechka/screens/user_provider.dart';
 import 'services/notification_service.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Инициализация Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  
   // Заблокируем ориентацию экрана в портретном режиме
   Future.delayed(const Duration(milliseconds: 300), () async {
     await SystemChrome.setPreferredOrientations([
@@ -18,16 +26,18 @@ void main() async {
       DeviceOrientation.portraitDown,
     ]);
   });
+  
   try {
     await DatabaseService.initializeDatabase();
     await NotificationService.initialize();
   } catch (e) {
     print('Initialization error: $e');
   }
+  
   final userProvider = UserProvider();
   final authService = AuthService();
-  // Проверяем статус входа
   final isLoggedIn = await authService.isLoggedIn(userProvider);
+  
   runApp(
     MultiProvider(
       providers: [
@@ -95,7 +105,7 @@ class MyApp extends StatelessWidget {
           NotificationService.navigatorKey, // Глобальный ключ навигатора
       onGenerateRoute: (settings) {
         if (settings.name == '/today') {
-          return MaterialPageRoute(builder: (context) => HomeScreen());
+          return MaterialPageRoute(builder: (context) => const HomeScreen());
         }
         return null;
       },

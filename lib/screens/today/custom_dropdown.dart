@@ -8,10 +8,10 @@ class CustomDropdown extends StatefulWidget {
       {super.key, required this.items, required this.onSelected});
 
   @override
-  _CustomDropdownState createState() => _CustomDropdownState();
+  CustomDropdownState createState() => CustomDropdownState();
 }
 
-class _CustomDropdownState extends State<CustomDropdown> {
+class CustomDropdownState extends State<CustomDropdown> {
   OverlayEntry? _overlayEntry;
   bool _isOpen = false;
   String _selectedItem = 'Моё расписание';

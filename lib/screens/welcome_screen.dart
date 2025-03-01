@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'splash_screen.dart';
+import 'login_screen.dart';
 import 'home_screen.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -32,13 +32,12 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     ).animate(_controller);
 
     Timer(const Duration(seconds: 4), () {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) =>
-              widget.isLoggedIn ? const HomeScreen() : const SplashScreen(),
-        ),
-      );
-    });
+  Navigator.of(context).pushReplacement(
+    MaterialPageRoute(
+      builder: (context) => widget.isLoggedIn ? const HomeScreen() : const LoginScreen(),
+    ),
+  );
+});
   }
 
   @override

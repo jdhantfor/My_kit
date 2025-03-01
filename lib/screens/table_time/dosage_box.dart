@@ -21,7 +21,7 @@ class DosageBox extends StatefulWidget {
 }
 
 class _DosageBoxState extends State<DosageBox> {
-  TimeOfDay _selectedTime = TimeOfDay.now();
+  final TimeOfDay _selectedTime = TimeOfDay.now();
 
   /// Преобразует TimeOfDay в строку формата 'HH:mm'
   String formatTime(TimeOfDay time) {

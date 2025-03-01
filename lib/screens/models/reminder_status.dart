@@ -5,7 +5,7 @@ enum ReminderStatus {
 }
 
 enum ReminderType {
-  medication, // Приём препарата
+  tablet, // Приём препарата
   measurement, // Измерение
   action, // Действие/привычка
 }

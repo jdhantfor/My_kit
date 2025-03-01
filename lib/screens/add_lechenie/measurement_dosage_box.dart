@@ -20,7 +20,7 @@ class MeasurementDosageBox extends StatefulWidget {
 }
 
 class _MeasurementDosageBoxState extends State<MeasurementDosageBox> {
-  TimeOfDay _selectedTime = TimeOfDay.now();
+  final TimeOfDay _selectedTime = TimeOfDay.now();
 
   /// Преобразует TimeOfDay в строку формата 'HH:mm'
   String formatTime(TimeOfDay time) {
@@ -131,10 +131,15 @@ class _MeasurementDosageBoxState extends State<MeasurementDosageBox> {
       initialEntryMode:
           TimePickerEntryMode.dial, // Используем dial для выбора времени
     );
+
     if (pickedTime != null) {
-      // Преобразуем выбранное время в строку формата 'HH:mm' и передаем её
       final formattedTime = formatTime(pickedTime);
       widget.onTimeAdded(formattedTime);
+
+      // Если это первое время, передаем его как selectTime
+      if (widget.timesAndDosages.isEmpty) {
+        widget.onTimeAdded(formattedTime); // Передаем первое время
+      }
     }
   }
 }

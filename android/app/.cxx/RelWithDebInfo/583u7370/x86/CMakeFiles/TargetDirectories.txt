@@ -1,0 +1,2 @@
+E:/Flutter_my_kit/aptechka/aptechka/android/app/.cxx/RelWithDebInfo/583u7370/x86/CMakeFiles/edit_cache.dir
+E:/Flutter_my_kit/aptechka/aptechka/android/app/.cxx/RelWithDebInfo/583u7370/x86/CMakeFiles/rebuild_cache.dir

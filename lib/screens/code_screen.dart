@@ -224,3 +224,7 @@ class CodeScreenState extends State<CodeScreen> {
     );
   }
 }
+
+extension on AuthService {
+  verifyCode(String phone, String enteredCode, UserProvider userProvider) {}
+}

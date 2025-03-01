@@ -5,7 +5,7 @@ class InviteScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final TextEditingController _emailController = TextEditingController();
+    final TextEditingController emailController = TextEditingController();
 
     return Scaffold(
       appBar: AppBar(
@@ -38,7 +38,7 @@ class InviteScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             TextField(
-              controller: _emailController,
+              controller: emailController,
               keyboardType: TextInputType.emailAddress,
               decoration: InputDecoration(
                 labelText: 'Email',

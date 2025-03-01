@@ -18,6 +18,7 @@ class Barcodes2Screen extends StatefulWidget {
 class _Barcodes2ScreenState extends State<Barcodes2Screen> {
   late PostgreSQLConnection _conn;
   MobileScannerController cameraController = MobileScannerController();
+  bool isScanning = false; // Добавляем флаг для контроля сканирования
 
   int successScans = 0;
   int failedScans = 0;
@@ -57,6 +58,11 @@ class _Barcodes2ScreenState extends State<Barcodes2Screen> {
   }
 
   Future<void> _processScannedCode(String scannedCode) async {
+    if (isScanning) {
+      return; // Игнорируем, если уже идет сканирование
+    }
+    setState(() => isScanning = true); // Устанавливаем флаг перед обработкой
+
     try {
       final results = await _conn.query(
         'SELECT id, "Name" FROM "Medicines" WHERE "Barcodes" = @barcode',
@@ -66,17 +72,28 @@ class _Barcodes2ScreenState extends State<Barcodes2Screen> {
       if (results.isNotEmpty) {
         final medicineId = results.first[0] as int;
         final medicineName = results.first[1] as String;
-        Navigator.push(
+
+        // Останавливаем камеру перед переходом
+        cameraController.stop();
+
+        // Переходим на MedicineCard
+        await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                MedicineCard(medicineId: medicineId, userId: widget.userId),
+            builder: (context) => MedicineCard(
+                medicineId: medicineId, userId: widget.userId),
           ),
-        );
-        setState(() {
-          successScans++;
+        ).then((_) {
+          // После возвращения возобновляем камеру и разрешаем сканирование
+          cameraController.start();
+          setState(() {
+            successScans++;
+            isScanning = false; // Сбрасываем флаг сразу после возвращения
+          });
         });
       } else {
+        // Если лекарство не найдено, добавляем задержку и показываем диалог
+        await Future.delayed(const Duration(seconds: 2));
         _showMedicineNotFoundDialog();
         setState(() {
           failedScans++;
@@ -84,10 +101,15 @@ class _Barcodes2ScreenState extends State<Barcodes2Screen> {
       }
     } catch (e) {
       print('Error processing scanned code: $e');
+      await Future.delayed(const Duration(seconds: 2));
       _showMedicineNotFoundDialog();
       setState(() {
         failedScans++;
       });
+    } finally {
+      // Сбрасываем флаг после задержки в случае ошибки или ненайденного кода
+      await Future.delayed(const Duration(seconds: 2));
+      setState(() => isScanning = false);
     }
   }
 
@@ -132,11 +154,12 @@ class _Barcodes2ScreenState extends State<Barcodes2Screen> {
         children: [
           MobileScanner(
             controller: cameraController,
-            fit: BoxFit.cover,
-            onDetect: (capture) {
+            onDetect: (capture) async {
               final List<Barcode> barcodes = capture.barcodes;
               for (final barcode in barcodes) {
-                _processScannedCode(barcode.rawValue ?? '');
+                if (!isScanning) { // Проверяем флаг перед вызовом обработки
+                  await _processScannedCode(barcode.rawValue ?? '');
+                }
               }
             },
           ),

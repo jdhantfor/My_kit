@@ -7,6 +7,7 @@ class UserProvider with ChangeNotifier {
   String? _email;
   String? _password;
   String? _phone;
+  String? _avatarUrl; // Новое поле для URL аватарки
 
   String? get userId => _userId;
   String? get name => _name;
@@ -14,6 +15,7 @@ class UserProvider with ChangeNotifier {
   String? get email => _email;
   String? get password => _password;
   String? get phone => _phone;
+  String? get avatarUrl => _avatarUrl; // Геттер для аватарки
 
   void setUserId(String? id) {
     _userId = id;
@@ -43,5 +45,10 @@ class UserProvider with ChangeNotifier {
   void setPhone(String phone) {
     _phone = phone;
     notifyListeners();
+  }
+
+  void setAvatarUrl(String url) {
+    _avatarUrl = url;
+    notifyListeners(); // Уведомляем об изменении аватарки
   }
 }

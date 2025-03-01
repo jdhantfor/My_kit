@@ -112,7 +112,7 @@ class NotificationService {
     const AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    final InitializationSettings initializationSettings =
+    const InitializationSettings initializationSettings =
         InitializationSettings(
       android: initializationSettingsAndroid,
     );
@@ -183,10 +183,10 @@ class NotificationService {
   // Запрос разрешения на точные уведомления
   static Future<bool> requestExactAlarmPermission(BuildContext context) async {
     final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-    final AndroidDeviceInfo? androidInfo = await deviceInfo.androidInfo;
+    final AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
 
     // Проверяем версию Android
-    if (androidInfo != null && androidInfo.version.sdkInt >= 31) {
+    if (androidInfo.version.sdkInt >= 31) {
       final PermissionStatus status =
           await Permission.scheduleExactAlarm.request();
 

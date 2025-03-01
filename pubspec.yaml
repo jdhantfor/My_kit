@@ -1,6 +1,6 @@
 name: my_aptechka
 description: Моя аптечка
-version: 0.0.1  # Здесь указывайте версию
+version: 0.7.1  # Здесь указывайте версию
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -40,18 +40,18 @@ dependencies:
   font_awesome_flutter: ^10.8.0
   postgres: ^2.5.2
   flutter_svg: ^1.0.3 
-  firebase_core: ^2.8.0
-  firebase_auth: ^4.5.0
+  firebase_core: ^3.12.1
+  firebase_auth: ^5.5.1
   fluttertoast: ^8.0.8
   flutter_time_picker_spinner: ^2.0.0
-  provider: ^6.0.1
+  provider: ^6.1.2
   intl: any
   sqflite: ^2.4.1
   dio: ^5.0.0
   http: ^0.13.3
   connectivity_plus: ^5.0.2
   uuid: ^3.0.6
-  flutter_secure_storage: ^8.0.0
+  flutter_secure_storage: ^9.2.4
   carousel_slider: ^4.2.1
   flutter_local_notifications: ^18.0.1
   timezone: ^0.9.4
@@ -60,7 +60,11 @@ dependencies:
   mobile_scanner: ^6.0.6
   image_picker: ^0.8.6
   path_provider: ^2.0.11
-  file_picker: ^5.2.7
+  file_picker: ^9.0.0
+  open_file: ^3.2.1
+  fl_chart: ^0.68.0
+  pdf: ^3.10.8
+  printing: ^5.13.2
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.1
@@ -123,6 +127,8 @@ flutter:
     - assets/deistvie_blue.svg
     - assets/priem_gray.svg
     - assets/priem.svg
+    - assets/measss_gray.svg
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

@@ -122,30 +122,28 @@ class _TableTimeScreenState extends State<TableTimeScreen> {
     }
 
     // Подготавливаем данные для записи
-    final reminderData = {
-      'name': widget.name,
-      'time': _selectedMealTime,
-      'dosage': _timesAndDosages.isNotEmpty
-          ? _timesAndDosages[0]['dosage'].toString()
-          : '',
-      'unit': widget.unit,
-      'selectTime':
-          _timesAndDosages.isNotEmpty ? _timesAndDosages[0]['time'] : null,
-      'startDate': DateFormat('yyyy-MM-dd').format(_startDate),
-      'endDate':
-          endDate != null ? DateFormat('yyyy-MM-dd').format(endDate) : null,
-      'isLifelong': _isLifelong ? 1 : 0,
-      'schedule_type': _selectedScheduleType,
-      'interval_value': _intervalValue,
-      'interval_unit': _intervalUnit,
-      'selected_days_mask': _selectedDaysMask,
-      'cycle_duration': _durationValueForSchedule,
-      'cycle_break': _breakValue,
-      'cycle_break_unit':
-          _breakUnit, // Добавляем поле для единиц измерения перерыва
-      'courseid': _selectedCourseId,
-      'user_id': userId,
-    };
+   final reminderData = {
+  'name': widget.name,
+  'time': _selectedMealTime,
+  'dosage': _timesAndDosages.isNotEmpty
+      ? _timesAndDosages[0]['dosage'].toString()
+      : '',
+  'unit': widget.unit,
+  'selectTime':
+      _timesAndDosages.isNotEmpty ? _timesAndDosages[0]['time'] : null,
+  'startDate': DateFormat('yyyy-MM-dd').format(_startDate),
+  'endDate': endDate != null ? DateFormat('yyyy-MM-dd').format(endDate) : null,
+  'isLifelong': _isLifelong ? 1 : 0,
+  'schedule_type': _selectedScheduleType,
+  'interval_value': _intervalValue, 
+  'interval_unit': _intervalUnit,
+  'selected_days_mask': _selectedDaysMask,
+  'cycle_duration': _durationValueForSchedule,
+  'cycle_break': _breakValue,
+  'cycle_break_unit': _breakUnit,
+  'courseid': _selectedCourseId,
+  'user_id': userId,
+};
 
     // Удаляем null значения
     reminderData.removeWhere((key, value) => value == null);
@@ -168,203 +166,201 @@ class _TableTimeScreenState extends State<TableTimeScreen> {
     });
   }
 
-  @override
   Widget build(BuildContext context) {
-    final userId = Provider.of<UserProvider>(context).userId;
-    if (userId == null) {
-      return const Scaffold(
-        body: Center(child: Text('Пожалуйста, войдите в систему')),
-      );
-    }
+  final userId = Provider.of<UserProvider>(context).userId;
+  if (userId == null) {
+    return const Scaffold(
+      body: Center(child: Text('Пожалуйста, войдите в систему')),
+    );
+  }
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
-        ),
-        title: Text(
-          widget.name,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            color: Colors.black,
-          ),
-        ),
-        centerTitle: false,
-        backgroundColor: Colors.white,
-        elevation: 0,
+  return Scaffold(
+    appBar: AppBar(
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Длительность приема
-              const SizedBox(height: 16.0),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Длительность приема',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF6B7280),
-                    ),
+      title: Text(
+        widget.name,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: Colors.black,
+        ),
+      ),
+      centerTitle: false,
+      backgroundColor: Colors.white,
+      elevation: 0,
+    ),
+    body: SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Длительность приема
+            const SizedBox(height: 16.0),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Длительность приема',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF6B7280),
                   ),
-                  const SizedBox(height: 4.0),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 4.0,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 12.0,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Бессрочно',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0B102B),
-                                ),
-                              ),
-                              Switch(
-                                value: _isLifelong,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _isLifelong = value;
-                                  });
-                                },
-                                activeColor: const Color(0xFF197FF2),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Divider(
-                          color: Color(0xFFE0E0E0),
-                          thickness: 1,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 12.0,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Начало приема',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0B102B),
-                                ),
-                              ),
-                              InkWell(
-                                onTap: () {
-                                  _showDatePicker(context);
-                                },
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      DateFormat('dd.MM.yyyy')
-                                          .format(_startDate),
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: Color(0xFF197FF2),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8.0),
-                                    const Icon(
-                                      Icons.chevron_right,
-                                      color: Color(0xFF197FF2),
-                                      size: 24,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-
-              // Срок приема (если не бессрочно)
-              if (!_isLifelong)
-                Column(
-                  children: [
-                    const Divider(
-                      color: Color(0xFFE0E0E0),
-                      thickness: 1,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 12.0,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Срок приема',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF0B102B),
-                            ),
-                          ),
-                          InkWell(
-                            onTap: () {
-                              _showDurationPicker(context);
-                            },
-                            child: Row(
-                              children: [
-                                Text(
-                                  '$_durationValue $_durationUnit',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF197FF2),
-                                  ),
-                                ),
-                                const SizedBox(width: 8.0),
-                                const Icon(
-                                  Icons.chevron_right,
-                                  color: Color(0xFF197FF2),
-                                  size: 24,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
                 ),
+                const SizedBox(height: 4.0),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24.0),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 4.0,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 12.0,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Бессрочно',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF0B102B),
+                              ),
+                            ),
+                            Switch(
+                              value: _isLifelong,
+                              onChanged: (value) {
+                                setState(() {
+                                  _isLifelong = value;
+                                  _toggleDurationPicker();
+                                });
+                              },
+                              activeColor: const Color(0xFF197FF2),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(
+                        color: Color(0xFFE0E0E0),
+                        thickness: 1,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 12.0,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Начало приема',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF0B102B),
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () {
+                                _showDatePicker(context);
+                              },
+                              child: Row(
+                                children: [
+                                  Text(
+                                    DateFormat('dd.MM.yyyy')
+                                        .format(_startDate),
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF197FF2),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8.0),
+                                  const Icon(
+                                    Icons.chevron_right,
+                                    color: Color(0xFF197FF2),
+                                    size: 24,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_showDurationPickerInside && !_isLifelong)
+                        Column(
+                          children: [
+                            const Divider(
+                              color: Color(0xFFE0E0E0),
+                              thickness: 1,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                                vertical: 12.0,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Срок приема',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF0B102B),
+                                    ),
+                                  ),
+                                  InkWell(
+                                    onTap: () {
+                                      _showDurationPicker(context);
+                                    },
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          '$_durationValue $_durationUnit',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0xFF197FF2),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8.0),
+                                        const Icon(
+                                          Icons.chevron_right,
+                                          color: Color(0xFF197FF2),
+                                          size: 24,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
 
               // Время и дозировка
               DosageBox(
@@ -488,138 +484,153 @@ class _TableTimeScreenState extends State<TableTimeScreen> {
     }
   }
 
-  void _showDurationPicker(BuildContext context) {
-    int selectedNumber = 1;
-    String selectedUnit = 'Дней';
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return SizedBox(
-          height: 320,
-          child: Column(
-            children: [
-              // Заголовок
-              Container(
-                padding: const EdgeInsets.all(16),
-                child: const Text(
-                  'Длительность приёма',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                  ),
+  bool _showDurationPickerInside = false;
+
+void _toggleDurationPicker() {
+  setState(() {
+    _showDurationPickerInside = !_showDurationPickerInside;
+  });
+}
+
+void _showDurationPicker(BuildContext context) {
+  int selectedNumber = _durationValue;
+  String selectedUnit = _durationUnit;
+
+  showModalBottomSheet(
+    context: context,
+    builder: (context) {
+      return SizedBox(
+        height: 320,
+        child: Column(
+          children: [
+            // Заголовок
+            Container(
+              padding: const EdgeInsets.all(16),
+              child: const Text(
+                'Длительность приёма',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-              // Колеса выбора
-              Expanded(
-                child: Stack(
-                  children: [
-                    // Общая серая полоска на заднем плане
-                    Positioned.fill(
-                      child: Align(
-                        alignment: Alignment.center,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Container(
-                            width: double.infinity,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              color: const Color.fromARGB(255, 194, 193, 193),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+            ),
+            // Колеса выбора
+            Expanded(
+              child: Stack(
+                children: [
+                  // Общая серая полоска на заднем плане
+                  Positioned.fill(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Container(
+                          width: double.infinity,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(255, 194, 193, 193),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                       ),
                     ),
-                    Row(
-                      mainAxisAlignment:
-                          MainAxisAlignment.center, // Центрирование
-                      children: [
-                        // Числа (1-7)
-                        Expanded(
-                          flex: 1,
-                          child: ListWheelScrollView(
-                            itemExtent: 50,
-                            physics: const FixedExtentScrollPhysics(),
-                            onSelectedItemChanged: (index) {
-                              setState(() {
-                                selectedNumber = index + 1;
-                              });
-                            },
-                            children: List.generate(7, (index) {
-                              return Center(
-                                child: Text(
-                                  '${index + 1}',
-                                  style: const TextStyle(
-                                    fontSize: 22,
-                                    color: Color.fromARGB(255, 48, 48, 48),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ),
-                        ),
-                        SizedBox(width: 16), // Пространство между колесами
-                        // Единицы измерения (Дней/Недель)
-                        Expanded(
-                          flex: 1,
-                          child: ListWheelScrollView(
-                            itemExtent: 50,
-                            physics: const FixedExtentScrollPhysics(),
-                            onSelectedItemChanged: (index) {
-                              setState(() {
-                                selectedUnit = index == 0 ? 'Дней' : 'Недель';
-                              });
-                            },
-                            children: ['Дней', 'Недель'].map((unit) {
-                              return Center(
-                                child: Text(
-                                  unit,
-                                  style: const TextStyle(
-                                    fontSize: 22,
-                                    color: Color.fromARGB(255, 37, 37, 37),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              // Кнопка "Сохранить"
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    setState(() {
-                      _durationValue = selectedNumber;
-                      _durationUnit = selectedUnit;
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF197FF2),
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
                   ),
-                  child: const Text(
-                    'Сохранить',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center, // Центрирование
+                    children: [
+                      // Числа (1-7)
+                      Expanded(
+                        flex: 1,
+                        child: ListWheelScrollView(
+                          itemExtent: 50,
+                          physics: const FixedExtentScrollPhysics(),
+                          onSelectedItemChanged: (index) {
+                            setState(() {
+                              selectedNumber = index + 1;
+                            });
+                          },
+                          children: List.generate(7, (index) {
+                            return Center(
+                              child: Text(
+                                '${index + 1}',
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  color: Color.fromARGB(255, 48, 48, 48),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      ),
+                      SizedBox(width: 16), // Пространство между колесами
+                      // Единицы измерения (Дней/Недель)
+                      Expanded(
+                        flex: 1,
+                        child: ListWheelScrollView(
+                          itemExtent: 50,
+                          physics: const FixedExtentScrollPhysics(),
+                          onSelectedItemChanged: (index) {
+                            setState(() {
+                              selectedUnit = index == 0 ? 'Дней' : 'Недель';
+                            });
+                          },
+                          children: ['Дней', 'Недель'].map((unit) {
+                            return Center(
+                              child: Text(
+                                unit,
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  color: Color.fromARGB(255, 37, 37, 37),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+            ),
+            // Кнопка "Сохранить"
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    _durationValue = selectedNumber;
+                    _durationUnit = selectedUnit;
 
-  // Создаем метод для навигации к ScheduleScreen
+                    // Конвертация в дни
+                    if (_durationUnit == 'Недель') {
+                      _durationValue *= 7; // Если недели, то умножаем на 7
+                      _durationUnit = 'Дней'; // Всегда храним в днях
+                    }
+
+                    print('Выбранная длительность: $_durationValue $_durationUnit');
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF197FF2),
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
+                child: const Text(
+                  'Сохранить',
+                  style: TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
 // Метод для получения данных из ScheduleScreen
   Future<Map<String, dynamic>?> _navigateToScheduleScreen(
       BuildContext context) async {

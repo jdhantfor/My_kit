@@ -3,7 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:my_aptechka/screens/database_service.dart';
 import 'package:my_aptechka/screens/user_provider.dart';
 import 'package:provider/provider.dart';
-import 'splash_screen.dart';
+import 'login_screen.dart';
 
 class ProfileSettingsScreen extends StatelessWidget {
   const ProfileSettingsScreen({Key? key}) : super(key: key);
@@ -96,22 +96,22 @@ class ProfileSettingsScreen extends StatelessWidget {
         if (title == 'Имя, фамилия') {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => NameSurnameScreen()),
+            MaterialPageRoute(builder: (context) => const NameSurnameScreen()),
           );
         } else if (title == 'Телефон') {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => PhoneScreen()),
+            MaterialPageRoute(builder: (context) => const PhoneScreen()),
           );
         } else if (title == 'Почта') {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => EmailScreen()),
+            MaterialPageRoute(builder: (context) => const EmailScreen()),
           );
         } else if (title == 'Пароль') {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => PasswordScreen()),
+            MaterialPageRoute(builder: (context) => const PasswordScreen()),
           );
         }
       },
@@ -171,7 +171,7 @@ class ProfileSettingsScreen extends StatelessWidget {
     await DatabaseService.logout(userProvider.userId!);
     userProvider.setUserId(null);
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const SplashScreen()),
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
       (Route route) => false,
     );
   }

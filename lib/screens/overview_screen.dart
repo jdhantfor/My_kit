@@ -20,7 +20,10 @@ class OverviewScreen extends StatefulWidget {
 }
 
 class _OverviewScreenState extends State<OverviewScreen> {
-  int _selectedTab = 0; // 0 для показателей, 1 для документов
+  final GlobalKey<PulseWidgetState> _pulseKey = GlobalKey();
+  final GlobalKey<BloodPressureWidgetState> _bloodPressureKey = GlobalKey();
+  final GlobalKey<StepsWidgetState> _stepsKey = GlobalKey();
+  int _selectedTab = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -139,25 +142,24 @@ class _OverviewScreenState extends State<OverviewScreen> {
     );
   }
 
-  Widget _buildIndicatorsContent(String userId) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(4.0),
-        child: Column(
-          children: [
-            _buildHealthItem('Пульс', PulseWidget(userId: userId)),
-            const SizedBox(height: 4),
-            _buildHealthItem(
-                'Кровяное давление', BloodPressureWidget(userId: userId)),
-            const SizedBox(height: 4),
-            _buildHealthItem('Шаги', StepsWidget(userId: userId)),
-            const SizedBox(height: 16),
-            _buildBracerStatus(),
-          ],
-        ),
+Widget _buildIndicatorsContent(String userId) {
+  return SingleChildScrollView(
+    child: Padding(
+      padding: const EdgeInsets.all(4.0),
+      child: Column(
+        children: [
+          _buildHealthItem('Пульс', PulseWidget(key: _pulseKey, userId: userId)),
+          const SizedBox(height: 4),
+          _buildHealthItem('Кровяное давление', BloodPressureWidget(key: _bloodPressureKey, userId: userId)),
+          const SizedBox(height: 4),
+          _buildHealthItem('Шаги', StepsWidget(key: _stepsKey, userId: userId)),
+          const SizedBox(height: 16),
+          _buildBracerStatus(),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildHealthItem(String title, Widget content) {
     return Container(
@@ -209,24 +211,28 @@ class _OverviewScreenState extends State<OverviewScreen> {
     );
   }
 
-  void _showAddMeasurementBottomSheet(BuildContext context, String title) {
-    final userId = Provider.of<UserProvider>(context, listen: false).userId;
-    if (userId == null) return;
+void _showAddMeasurementBottomSheet(BuildContext context, String title) {
+  final userId = Provider.of<UserProvider>(context, listen: false).userId;
+  if (userId == null) return;
 
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: _getAddMeasurementWidget(title, userId),
-        );
-      },
-    );
-  }
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (BuildContext context) {
+      return Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: _getAddMeasurementWidget(title, userId),
+      );
+    },
+  ).then((_) {
+    _pulseKey.currentState?.refresh();
+    _bloodPressureKey.currentState?.refresh();
+    _stepsKey.currentState?.refresh();
+  });
+}
 
   Widget _getAddMeasurementWidget(String title, String userId) {
     switch (title) {
@@ -263,7 +269,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: Image.asset(
-            'assets/bracer_on.png',
+            'assets/bracer_off.png',
             width: MediaQuery.of(context).size.width - 16,
             fit: BoxFit.fitWidth,
           ),

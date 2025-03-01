@@ -6,21 +6,55 @@ import 'today/invite.dart';
 import 'package:my_aptechka/screens/profile_settings_screen.dart';
 import 'setting/smart_bandsettings_screen.dart';
 import 'setting/stateful_widget.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
-  Future<void> _pickImage(BuildContext context) async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? pickedFile =
-        await picker.pickImage(source: ImageSource.gallery);
+Future<void> _uploadAvatar(BuildContext context) async {
+  final picker = ImagePicker();
+  final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
-    if (pickedFile != null) {
-      // Здесь можно сохранить путь к изображению или отобразить его напрямую
-      print('Выбрано изображение: ${pickedFile.path}');
-      // Вы можете передать этот путь в UI, чтобы отобразить выбранное изображение
+  if (pickedFile != null) {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final userId = userProvider.userId;
+
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ID пользователя не указан')),
+      );
+      return;
+    }
+
+    // Отправляем файл на сервер
+    final uri = Uri.parse('http://62.113.37.96:5000/upload_avatar/$userId');
+    final request = http.MultipartRequest('POST', uri);
+    request.files.add(await http.MultipartFile.fromPath('avatar', pickedFile.path));
+
+    try {
+      final response = await request.send();
+      if (response.statusCode == 200) {
+        final responseData = await response.stream.bytesToString();
+        final data = json.decode(responseData);
+        final avatarUrl = data['avatar_url']; // Получаем URL от сервера
+        userProvider.setAvatarUrl(avatarUrl); // Обновляем аватарку
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Аватарка успешно загружена')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ошибка загрузки аватарки')),
+        );
+      }
+    } catch (e) {
+      print('Ошибка: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ошибка соединения с сервером')),
+      );
     }
   }
+}
 
   void _openFullScreenImage(BuildContext context, String imagePath) {
     Navigator.push(
@@ -104,6 +138,8 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -136,24 +172,29 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 16),
                       // Центральный кружок
-                      GestureDetector(
-                        onTap: () async {
-                          await _pickImage(
-                              context); // Вызов метода для выбора изображения
-                        },
-                        child: CircleAvatar(
-                          radius: 50,
-                          backgroundColor:
-                              const Color.fromARGB(255, 231, 231, 231),
-                          backgroundImage: null, // Убираем сетевое изображение
-                          child: const Icon(
-                            Icons
-                                .add_a_photo, // Временный иконка для добавления фото
-                            size: 30,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ),
+                      Consumer<UserProvider>(
+  builder: (context, userProvider, child) {
+    return GestureDetector(
+      onTap: () async {
+        await _uploadAvatar(context); // Вызываем загрузку при нажатии
+      },
+      child: CircleAvatar(
+        radius: 50,
+        backgroundColor: const Color.fromARGB(255, 231, 231, 231),
+        backgroundImage: userProvider.avatarUrl != null
+            ? NetworkImage(userProvider.avatarUrl!)
+            : null, // Показываем аватарку, если она есть
+        child: userProvider.avatarUrl == null
+            ? const Icon(
+                Icons.add_a_photo,
+                size: 30,
+                color: Colors.grey,
+              )
+            : null, // Иконка для загрузки, если аватарки нет
+      ),
+    );
+  },
+),
                       const SizedBox(width: 16),
                       // Правый кружок с голубым прозрачным фоном и голубым плюсиком
                       GestureDetector(
@@ -173,9 +214,11 @@ class ProfileScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  const Text(
-                    'Мое имя',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+                  Text(
+                    userProvider.name ??
+                        'Имя не указано', // Используем данные из UserProvider
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 24),
                   ),
                   const SizedBox(height: 8),
                   GestureDetector(

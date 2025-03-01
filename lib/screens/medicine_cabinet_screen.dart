@@ -34,8 +34,7 @@ class _FilterModalState extends State<FilterModal> {
   @override
   void initState() {
     super.initState();
-    _selectedCategories =
-        Set.from(widget.selectedCategories); // Локальная копия
+    _selectedCategories = Set.from(widget.selectedCategories);
   }
 
   @override
@@ -73,16 +72,13 @@ class _FilterModalState extends State<FilterModal> {
                     category,
                     style: const TextStyle(fontSize: 16),
                   ),
-                  value: _selectedCategories
-                      .contains(category), // Используем локальную копию
+                  value: _selectedCategories.contains(category),
                   onChanged: (bool? value) {
                     setState(() {
                       if (value == true) {
-                        _selectedCategories
-                            .add(category); // Добавляем в локальную копию
+                        _selectedCategories.add(category);
                       } else {
-                        _selectedCategories
-                            .remove(category); // Удаляем из локальной копии
+                        _selectedCategories.remove(category);
                       }
                     });
                   },
@@ -110,8 +106,7 @@ class _FilterModalState extends State<FilterModal> {
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 minimumSize: const Size(double.infinity, 50),
               ),
-              onPressed: () => widget
-                  .onApply(_selectedCategories), // Передаем локальную копию
+              onPressed: () => widget.onApply(_selectedCategories),
               child: const Text(
                 'Применить',
                 style: TextStyle(color: Colors.white, fontSize: 18),
@@ -127,6 +122,7 @@ class _FilterModalState extends State<FilterModal> {
 class _MedicineCabinetScreenState extends State<MedicineCabinetScreen> {
   List<Map<String, dynamic>> medicinesList = [];
   Set<String> selectedCategories = {};
+  bool isSortedByDeficit = false; // Флаг для отслеживания состояния сортировки
 
   @override
   void initState() {
@@ -184,7 +180,6 @@ class _MedicineCabinetScreenState extends State<MedicineCabinetScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          // Кнопка "Категории"
           ElevatedButton.icon(
             icon: const Icon(Icons.filter_alt_outlined, color: Colors.black),
             label:
@@ -192,16 +187,13 @@ class _MedicineCabinetScreenState extends State<MedicineCabinetScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.grey[300],
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24), // Скругление 24
+                borderRadius: BorderRadius.circular(24),
               ),
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 10), // Уменьшенные отступы
-              minimumSize: const Size(100, 40), // Уменьшенная ширина
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              minimumSize: const Size(100, 40),
             ),
             onPressed: () => _showFilterModal(),
           ),
-
-          // Кнопка "Сначала те, что в дефиците"
           ElevatedButton.icon(
             icon: const Icon(Icons.swap_vert, color: Colors.black),
             label: const Text(
@@ -217,7 +209,7 @@ class _MedicineCabinetScreenState extends State<MedicineCabinetScreen> {
               minimumSize: const Size(200, 40),
             ),
             onPressed: () {
-              _sortMedicinesByDeficit(); // Вызываем метод сортировки
+              _toggleSortByDeficit(); // Переключаем сортировку
             },
           ),
         ],
@@ -225,14 +217,9 @@ class _MedicineCabinetScreenState extends State<MedicineCabinetScreen> {
     );
   }
 
-  void _sortMedicinesByDeficit() {
+  void _toggleSortByDeficit() {
     setState(() {
-      medicinesList.sort((a, b) {
-        int countA = a['packageCount'] ??
-            0; // Если packageCount отсутствует, считаем его равным 0
-        int countB = b['packageCount'] ?? 0;
-        return countA.compareTo(countB); // Сортировка по возрастанию
-      });
+      isSortedByDeficit = !isSortedByDeficit; // Переключаем флаг
     });
   }
 
@@ -300,8 +287,7 @@ class _MedicineCabinetScreenState extends State<MedicineCabinetScreen> {
       ),
       body: Column(
         children: [
-          if (medicinesList.length > 3)
-            _buildFilterAndSortButtons(), // Новый метод
+          if (medicinesList.length > 3) _buildFilterAndSortButtons(),
           Expanded(
             child: medicinesList.isEmpty
                 ? _buildEmptyList()
@@ -363,12 +349,20 @@ class _MedicineCabinetScreenState extends State<MedicineCabinetScreen> {
   }
 
   Widget _buildMedicineList(String userId) {
-    final filteredMedicines = selectedCategories.isEmpty
-        ? medicinesList
+    var filteredMedicines = selectedCategories.isEmpty
+        ? List.from(medicinesList) // Создаем копию списка
         : medicinesList
             .where((medicine) =>
                 selectedCategories.contains(medicine['releaseForm']))
             .toList();
+
+    if (isSortedByDeficit) {
+      filteredMedicines.sort((a, b) {
+        int countA = a['packageCount'] ?? 0;
+        int countB = b['packageCount'] ?? 0;
+        return countA.compareTo(countB); // Сортировка по возрастанию
+      });
+    }
 
     return ListView.builder(
       itemCount: filteredMedicines.length,
@@ -392,7 +386,6 @@ class _MedicineCabinetScreenState extends State<MedicineCabinetScreen> {
                     height: 50,
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
-                      print('Error loading image: $error');
                       return Image.asset('assets/default_box.png',
                           width: 50, height: 50);
                     },

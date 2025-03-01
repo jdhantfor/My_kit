@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+
 class MeasurementScheduleBox extends StatefulWidget {
   final Function() onNavigateToScheduleScreen;
   final String selectedMealTime;
@@ -17,7 +18,6 @@ class MeasurementScheduleBox extends StatefulWidget {
     required this.onNotificationSelected,
     required this.selectedScheduleType,
   });
-
   @override
   _MeasurementScheduleBoxState createState() => _MeasurementScheduleBoxState();
 }
@@ -29,7 +29,7 @@ class _MeasurementScheduleBoxState extends State<MeasurementScheduleBox> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Измерение',
+          'Прием',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
@@ -59,7 +59,7 @@ class _MeasurementScheduleBoxState extends State<MeasurementScheduleBox> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'График измерений',
+                      'График приёма',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
@@ -82,7 +82,7 @@ class _MeasurementScheduleBoxState extends State<MeasurementScheduleBox> {
                                             ? 'Циклично'
                                             : widget.selectedScheduleType ==
                                                     'single'
-                                                ? 'Однократное измерение'
+                                                ? 'Однократный прием'
                                                 : 'Ежедневно',
                             style: const TextStyle(
                               fontSize: 16,
@@ -102,7 +102,10 @@ class _MeasurementScheduleBoxState extends State<MeasurementScheduleBox> {
                   ],
                 ),
               ),
-              const Divider(color: Color(0xFFE0E0E0), thickness: 1),
+              const Divider(
+                color: Color(0xFFE0E0E0),
+                thickness: 1,
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 16.0, vertical: 12.0),
@@ -143,7 +146,10 @@ class _MeasurementScheduleBoxState extends State<MeasurementScheduleBox> {
                   ],
                 ),
               ),
-              const Divider(color: Color(0xFFE0E0E0), thickness: 1),
+              const Divider(
+                color: Color(0xFFE0E0E0),
+                thickness: 1,
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 16.0, vertical: 12.0),
@@ -197,16 +203,18 @@ class _MeasurementScheduleBoxState extends State<MeasurementScheduleBox> {
       builder: (context) {
         return Container(
           constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.8),
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
           child: Column(
             children: [
               const SizedBox(height: 16.0),
               const Text(
-                'Когда измерять',
+                'Когда принимать',
                 style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0B102B)),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0B102B),
+                ),
               ),
               const SizedBox(height: 16.0),
               Expanded(
@@ -251,16 +259,18 @@ class _MeasurementScheduleBoxState extends State<MeasurementScheduleBox> {
       builder: (context) {
         return Container(
           constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.8),
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
+          ),
           child: Column(
             children: [
               const SizedBox(height: 16.0),
               const Text(
                 'Уведомлять',
                 style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0B102B)),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0B102B),
+                ),
               ),
               const SizedBox(height: 16.0),
               Expanded(
@@ -272,32 +282,28 @@ class _MeasurementScheduleBoxState extends State<MeasurementScheduleBox> {
                         widget.onNotificationSelected('Не уведомлять');
                         Navigator.of(context).pop();
                       }),
-                      _buildNotificationOption('В момент измерения', () {
-                        widget.onNotificationSelected('В момент измерения');
+                      _buildNotificationOption('В момент приёма', () {
+                        widget.onNotificationSelected('В момент приёма');
                         Navigator.of(context).pop();
                       }),
-                      _buildNotificationOption('За 5 минут до измерения', () {
-                        widget
-                            .onNotificationSelected('За 5 минут до измерения');
+                      _buildNotificationOption('За 5 минут до приёма', () {
+                        widget.onNotificationSelected('За 5 минут до приёма');
                         Navigator.of(context).pop();
                       }),
-                      _buildNotificationOption('За 10 минут до измерения', () {
-                        widget
-                            .onNotificationSelected('За 10 минут до измерения');
+                      _buildNotificationOption('За 10 минут до приёма', () {
+                        widget.onNotificationSelected('За 10 минут до приёма');
                         Navigator.of(context).pop();
                       }),
-                      _buildNotificationOption('За 15 минут до измерения', () {
-                        widget
-                            .onNotificationSelected('За 15 минут до измерения');
+                      _buildNotificationOption('За 15 минут до приёма', () {
+                        widget.onNotificationSelected('За 15 минут до приёма');
                         Navigator.of(context).pop();
                       }),
-                      _buildNotificationOption('За 30 минут до измерения', () {
-                        widget
-                            .onNotificationSelected('За 30 минут до измерения');
+                      _buildNotificationOption('За 30 минут до приёма', () {
+                        widget.onNotificationSelected('За 30 минут до приёма');
                         Navigator.of(context).pop();
                       }),
-                      _buildNotificationOption('За час до измерения', () {
-                        widget.onNotificationSelected('За час до измерения');
+                      _buildNotificationOption('За час до приёма', () {
+                        widget.onNotificationSelected('За час до приёма');
                         Navigator.of(context).pop();
                       }),
                     ],

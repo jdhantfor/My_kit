@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:my_aptechka/screens/database_service.dart';
 
 class StepsWidget extends StatefulWidget {
@@ -7,11 +8,12 @@ class StepsWidget extends StatefulWidget {
   const StepsWidget({super.key, required this.userId});
 
   @override
-  _StepsWidgetState createState() => _StepsWidgetState();
+  State<StepsWidget> createState() => StepsWidgetState();
 }
 
-class _StepsWidgetState extends State<StepsWidget> {
+class StepsWidgetState extends State<StepsWidget> {
   List<Map<String, dynamic>> stepsData = [];
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -20,88 +22,117 @@ class _StepsWidgetState extends State<StepsWidget> {
   }
 
   Future<void> _loadStepsData() async {
-    final data = await DatabaseService.getStepsData(widget.userId);
     setState(() {
-      stepsData = data;
+      isLoading = true;
     });
+    try {
+      final data = await DatabaseService.getStepsData(widget.userId);
+      setState(() {
+        stepsData = _prepareWeeklyData(data);
+        isLoading = false;
+      });
+    } catch (e) {
+      print('Error loading steps data: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  List<Map<String, dynamic>> _prepareWeeklyData(List<Map<String, dynamic>> data) {
+    final now = DateTime.now();
+    final weekDays = List.generate(7, (i) => now.subtract(Duration(days: 6 - i)));
+    final weeklyData = <Map<String, dynamic>>[];
+    final dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+
+    for (int i = 0; i < 7; i++) {
+      final date = DateFormat('yyyy-MM-dd').format(weekDays[i]);
+      final dayData = data.firstWhere(
+        (item) => item['date'].startsWith(date),
+        orElse: () => {'date': date, 'count': null},
+      );
+      weeklyData.add({
+        'date': date,
+        'count': dayData['count'],
+        'dayOfWeek': dayNames[weekDays[i].weekday - 1],
+      });
+    }
+    return weeklyData;
+  }
+
+  void refresh() {
+    _loadStepsData();
   }
 
   @override
   Widget build(BuildContext context) {
+    const maxSteps = 50000.0;
+    const maxHeight = 140.0;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (stepsData.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            const Text(
-              'Количество шагов за 7 дней',
-              style: TextStyle(fontSize: 12, color: Colors.grey),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(7, (index) {
-                final data = index < stepsData.length ? stepsData[index] : null;
-                final maxSteps = stepsData.fold(0,
-                    (max, item) => item['count'] > max ? item['count'] : max);
-                return Column(
+      child: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : stepsData.every((data) => data['count'] == null)
+              ? const SizedBox.shrink()
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_getDayOfWeek(index),
-                        style: const TextStyle(fontSize: 12)),
-                    const SizedBox(height: 4),
+                    const Text(
+                      'За последние 7 дней',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 12),
                     SizedBox(
-                      width: 30,
-                      height: 60,
-                      child: Stack(
-                        alignment: Alignment.bottomCenter,
-                        children: [
-                          Container(
-                            width: 30,
-                            height: data != null
-                                ? (data['count'] / maxSteps) * 60
-                                : 0,
-                            color: const Color.fromRGBO(242, 25, 141, 0.08),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
-                            child: data != null
-                                ? Text(
-                                    '${(data['count'] / 1000).toStringAsFixed(1)}k',
-                                    style: const TextStyle(
-                                      color: Color.fromRGBO(242, 25, 141, 1),
-                                      fontSize: 10,
+                      height: maxHeight,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: stepsData.map((data) {
+                          final double columnHeight = data['count'] != null
+                              ? (maxHeight - 20) * (data['count'] / maxSteps).clamp(0.0, 1.0)
+                              : 10.0;
+                          return SizedBox(
+                            width: 40,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Container(
+                                  height: columnHeight,
+                                  decoration: BoxDecoration(
+                                    color: const Color.fromRGBO(242, 162, 25, 0.08),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      data['count'] != null
+                                          ? '${(data['count'] / 1000).toStringAsFixed(1)}k'
+                                          : '',
+                                      style: const TextStyle(
+                                        color: Colors.orange,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  )
-                                : const Text('-',
-                                    style: TextStyle(color: Colors.grey)),
-                          ),
-                        ],
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  data['dayOfWeek'],
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
                       ),
                     ),
                   ],
-                );
-              }),
-            ),
-          ] else ...[
-            const SizedBox(height: 8),
-            const Text('Нет данных о шагах',
-                style: TextStyle(color: Colors.grey)),
-          ],
-          const SizedBox(height: 16),
-        ],
-      ),
+                ),
     );
-  }
-
-  String _getDayOfWeek(int index) {
-    final days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-    final today = DateTime.now().weekday - 1;
-    return days[(today - index + 7) % 7];
   }
 }

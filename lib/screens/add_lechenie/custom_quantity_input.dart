@@ -16,7 +16,7 @@ class CustomQuantityInput extends StatefulWidget {
 
 class _CustomQuantityInputState extends State<CustomQuantityInput> {
   bool _isFocused = false;
-  TextEditingController _controller = TextEditingController();
+  final TextEditingController _controller = TextEditingController();
 
   @override
   void initState() {

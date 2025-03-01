@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:my_aptechka/screens/database_service.dart'; // Убедитесь, что путь к файлу правильный
+import 'package:intl/intl.dart';
+import 'package:my_aptechka/screens/database_service.dart';
 
 class PulseWidget extends StatefulWidget {
   final String userId;
@@ -7,10 +8,10 @@ class PulseWidget extends StatefulWidget {
   const PulseWidget({super.key, required this.userId});
 
   @override
-  _PulseWidgetState createState() => _PulseWidgetState();
+  State<PulseWidget> createState() => PulseWidgetState();
 }
 
-class _PulseWidgetState extends State<PulseWidget> {
+class PulseWidgetState extends State<PulseWidget> {
   List<Map<String, dynamic>> pulseData = [];
   bool isLoading = true;
 
@@ -25,10 +26,9 @@ class _PulseWidgetState extends State<PulseWidget> {
       isLoading = true;
     });
     try {
-      // Загрузка данных из базы данных
       final data = await DatabaseService.getPulseData(widget.userId);
       setState(() {
-        pulseData = data;
+        pulseData = _prepareWeeklyData(data);
         isLoading = false;
       });
     } catch (e) {
@@ -39,10 +39,37 @@ class _PulseWidgetState extends State<PulseWidget> {
     }
   }
 
+  void refresh() {
+    _loadPulseData();
+  }
+
+  List<Map<String, dynamic>> _prepareWeeklyData(List<Map<String, dynamic>> data) {
+    final now = DateTime.now();
+    final weekDays = List.generate(7, (i) => now.subtract(Duration(days: 6 - i))); // От 6 дней назад до сегодня
+    final weeklyData = <Map<String, dynamic>>[];
+    final dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+
+    for (int i = 0; i < 7; i++) {
+      final date = DateFormat('yyyy-MM-dd').format(weekDays[i]);
+      final dayData = data.firstWhere(
+        (item) => item['date'].startsWith(date),
+        orElse: () => {'date': date, 'value': null},
+      );
+      final dayOfWeek = dayNames[weekDays[i].weekday - 1]; // weekday: 1 (Пн) - 7 (Вс)
+      weeklyData.add({
+        'date': date,
+        'value': dayData['value'],
+        'dayOfWeek': dayOfWeek,
+      });
+    }
+    print('Prepared weekly pulse data: $weeklyData');
+    return weeklyData;
+  }
+
   @override
   Widget build(BuildContext context) {
-    const maxPulse = 150.0;
-    const maxHeight = 120.0;
+    const maxPulse = 200.0; // Увеличил до 200 для больших значений
+    const maxHeight = 140.0;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -52,85 +79,60 @@ class _PulseWidgetState extends State<PulseWidget> {
       ),
       child: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (pulseData.isNotEmpty) ...[
-                  const Text(
-                    'Средний показатель за 7 дней',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    height: maxHeight,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: pulseData.asMap().entries.map((entry) {
-                        final int index = entry.key;
-                        final Map<String, dynamic> data = entry.value;
-                        final double columnHeight =
-                            (maxHeight * (data['value'] / maxPulse))
-                                .clamp(0.0, maxHeight);
-                        return Expanded(
-                          child: Padding(
-                            padding: EdgeInsets.only(
-                              left: index == 0 ? 0 : 2,
-                              right: index == pulseData.length - 1 ? 0 : 2,
-                            ),
+          : pulseData.every((data) => data['value'] == null)
+              ? const SizedBox.shrink()
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Средний показатель за 7 дней',
+                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: maxHeight,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: pulseData.map((data) {
+                          final double columnHeight = data['value'] != null
+                              ? (maxHeight - 20) * (data['value'] / maxPulse).clamp(0.0, 1.0)
+                              : 10.0;
+                          return SizedBox(
+                            width: 40,
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 Container(
                                   height: columnHeight,
                                   decoration: BoxDecoration(
-                                    color:
-                                        const Color.fromRGBO(242, 25, 141, 0.3),
+                                    color: const Color.fromRGBO(242, 25, 141, 0.08),
                                     borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: Align(
-                                    alignment: Alignment.bottomCenter,
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(bottom: 4),
-                                      child: Text(
-                                        '${data['value']}',
-                                        style: const TextStyle(
-                                          color:
-                                              Color.fromRGBO(242, 25, 141, 1),
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                        ),
+                                  child: Center(
+                                    child: Text(
+                                      data['value'] != null ? '${data['value']}' : '',
+                                      style: const TextStyle(
+                                        color: Color.fromRGBO(242, 25, 141, 1),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),
                                 ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  data['dayOfWeek'],
+                                  style: const TextStyle(fontSize: 12),
+                                ),
                               ],
                             ),
-                          ),
-                        );
-                      }).toList(),
+                          );
+                        }).toList(),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: pulseData
-                        .map((data) => Expanded(
-                              child: Center(
-                                child: Text(data['date'],
-                                    style: const TextStyle(fontSize: 12)),
-                              ),
-                            ))
-                        .toList(),
-                  ),
-                ] else ...[
-                  const Text(
-                    'Нет данных о пульсе',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                ],
-              ],
-            ),
+                  ],
+                ),
     );
   }
 }
