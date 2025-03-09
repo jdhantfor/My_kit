@@ -23,12 +23,15 @@ class CourseSelectionBox extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Курс лечения',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF6B7280),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text(
+            'Курс лечения',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF6B7280),
+            ),
           ),
         ),
         const SizedBox(height: 8.0),

@@ -20,29 +20,48 @@ class AddMeasurementScreen extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text('Добавить измерение'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(4.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Выберите тип измерения',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            _buildMeasurementOption(
-              context,
-              'Кровяное давление',
-              () => _navigateToSettingsScreen(context, 'Кровяное давление'),
-            ),
             const SizedBox(height: 16),
-            _buildMeasurementOption(
-              context,
-              'Пульс',
-              () => _navigateToSettingsScreen(context, 'Пульс'),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24.0), // Закругление 24
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4.0,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  _buildMeasurementOption(
+                    context,
+                    'Кровяное давление',
+                    () =>
+                        _navigateToSettingsScreen(context, 'Кровяное давление'),
+                  ),
+                  // Разделитель
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Container(
+                      height: 1,
+                      color: Colors.grey.withOpacity(0.3), // Цвет полосочки
+                    ),
+                  ),
+                  _buildMeasurementOption(
+                    context,
+                    'Пульс',
+                    () => _navigateToSettingsScreen(context, 'Пульс'),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -52,20 +71,11 @@ class AddMeasurementScreen extends StatelessWidget {
 
   Widget _buildMeasurementOption(
       BuildContext context, String title, VoidCallback onTap) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4.0,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return Padding(
+      padding:
+          const EdgeInsets.symmetric(vertical: 12.0), // Отступы сверху и снизу
       child: ListTile(
-        title: Text(title, style: const TextStyle(fontSize: 18)),
+        title: Text(title, style: const TextStyle(fontSize: 16)),
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,
       ),

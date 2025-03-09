@@ -9,3 +9,10 @@ enum ReminderType {
   measurement, // Измерение
   action, // Действие/привычка
 }
+
+enum DayStatus {
+  none, // По умолчанию (чёрный, нет напоминаний)
+  yellow, // Частичное выполнение (есть complete и incomplete)
+  green, // Полное выполнение (все complete)
+  red, // Ничего не выполнено (все incomplete)
+}

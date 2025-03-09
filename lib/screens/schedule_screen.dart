@@ -49,7 +49,6 @@ class _ScheduleScreenState extends State {
           ),
         ),
         centerTitle: false,
-        backgroundColor: Colors.white,
         elevation: 0,
       ),
       body: Padding(
@@ -57,12 +56,16 @@ class _ScheduleScreenState extends State {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Периодичность приёма',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF6B7280),
+            const SizedBox(height: 8.0), // Отступ сверху 8
+            const Padding(
+              padding: EdgeInsets.only(left: 16.0), // Отступ 16 слева
+              child: Text(
+                'Периодичность приёма',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF6B7280),
+                ),
               ),
             ),
             const SizedBox(height: 8.0),
@@ -102,7 +105,7 @@ class _ScheduleScreenState extends State {
                   backgroundColor: const Color(0xFF197FF2),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
+                    borderRadius: BorderRadius.circular(24.0),
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 16.0),
                 ),
@@ -132,13 +135,22 @@ class _ScheduleScreenState extends State {
         children: [
           buildScheduleOption(
               'С равными интервалами', 'Например: раз в 3 дня', 0),
-          Divider(height: 1, color: Colors.grey.shade300),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Divider(height: 1, color: Colors.grey.shade300),
+          ),
           buildScheduleOption(
               'В определенные дни недели', 'Например: пн, ср и пт', 1),
-          Divider(height: 1, color: Colors.grey.shade300),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Divider(height: 1, color: Colors.grey.shade300),
+          ),
           buildScheduleOption(
               'Циклично', 'Например: 3 недели приёма, неделя отдыха', 2),
-          Divider(height: 1, color: Colors.grey.shade300),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Divider(height: 1, color: Colors.grey.shade300),
+          ),
           buildScheduleOption('Однократно', '', 3),
         ],
       ),
@@ -146,20 +158,11 @@ class _ScheduleScreenState extends State {
   }
 
   Widget buildScheduleOption(String title, String subtitle, int index) {
-    return RadioListTile(
-      value: index,
-      groupValue: _selectedScheduleIndex,
-      onChanged: (value) {
-        setState(() {
-          _selectedScheduleIndex = value!;
-          if (index == 1) {
-            _scheduleType =
-                'weekly'; // Установить тип расписания для дней недели
-          } else if (index == 0) {
-            _scheduleType = 'interval'; // Для равных интервалов
-          }
-        });
-      },
+    bool isSelected = _selectedScheduleIndex == index;
+
+    return ListTile(
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       title: Text(
         title,
         style: const TextStyle(
@@ -178,10 +181,62 @@ class _ScheduleScreenState extends State {
               ),
             )
           : null,
-      activeColor: const Color(0xFF197FF2),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      controlAffinity: ListTileControlAffinity.trailing,
+      trailing: GestureDetector(
+        onTap: () {
+          setState(() {
+            _selectedScheduleIndex = index;
+            if (index == 1) {
+              _scheduleType = 'weekly';
+            } else if (index == 0) {
+              _scheduleType = 'interval';
+            } else if (index == 2) {
+              _scheduleType = 'cyclic';
+            } else if (index == 3) {
+              _scheduleType = 'single';
+            }
+          });
+        },
+        child: Container(
+          width: 20, // Общий диаметр всего кружка
+          height: 20,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isSelected ? const Color(0xFF197FF2) : Colors.grey,
+              width: isSelected
+                  ? 6
+                  : 2, // Толщина ободка: 6 при выборе, 2 при невыбранном
+            ),
+          ),
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: isSelected
+                  ? 6
+                  : 0, // Диаметр внутреннего белого кружка только при выборе
+              height: isSelected ? 6 : 0,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      ),
+      onTap: () {
+        setState(() {
+          _selectedScheduleIndex = index;
+          if (index == 1) {
+            _scheduleType = 'weekly';
+          } else if (index == 0) {
+            _scheduleType = 'interval';
+          } else if (index == 2) {
+            _scheduleType = 'cyclic';
+          } else if (index == 3) {
+            _scheduleType = 'single';
+          }
+        });
+      },
     );
   }
 
@@ -190,12 +245,15 @@ class _ScheduleScreenState extends State {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16.0),
-        const Text(
-          'Интервал',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF6B7280),
+        const Padding(
+          padding: EdgeInsets.only(left: 16.0), // Отступ 16 слева
+          child: Text(
+            'Интервал',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF6B7280),
+            ),
           ),
         ),
         const SizedBox(height: 8.0),
@@ -215,44 +273,45 @@ class _ScheduleScreenState extends State {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-  child: Row(
-    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [
-      const Text(
-        'Принимать раз в',
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          color: Color(0xFF0B102B),
-        ),
-      ),
-      InkWell(
-        onTap: () {
-          _showIntervalPicker(context);
-        },
-        child: Row(
-          children: [
-            Text(
-              '$_intervalValue $_intervalUnit',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF197FF2),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16.0, vertical: 12.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Принимать раз в',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF0B102B),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () {
+                        _showIntervalPicker(context);
+                      },
+                      child: Row(
+                        children: [
+                          Text(
+                            '$_intervalValue $_intervalUnit',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF197FF2),
+                            ),
+                          ),
+                          const SizedBox(width: 8.0),
+                          const Icon(
+                            Icons.chevron_right,
+                            color: Color(0xFF197FF2),
+                            size: 24,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(width: 8.0),
-            const Icon(
-              Icons.chevron_right,
-              color: Color(0xFF197FF2),
-              size: 24,
-            ),
-          ],
-        ),
-      ),
-    ],
-  ),
-),
             ],
           ),
         ),
@@ -260,156 +319,161 @@ class _ScheduleScreenState extends State {
     );
   }
 
- void _showIntervalPicker(BuildContext context) {
-  int selectedNumber = _intervalValue;
-  String selectedUnit = _intervalUnit;
+  void _showIntervalPicker(BuildContext context) {
+    int selectedNumber = _intervalValue;
+    String selectedUnit = _intervalUnit;
 
-  showModalBottomSheet(
-    context: context,
-    builder: (context) {
-      return SizedBox(
-        height: 320,
-        child: Column(
-          children: [
-            // Заголовок
-            Container(
-              padding: const EdgeInsets.all(16),
-              child: const Text(
-                'Принимать раз в',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return SizedBox(
+          height: 320,
+          child: Column(
+            children: [
+              // Заголовок
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: const Text(
+                  'Принимать раз в',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-            ),
-            // Колеса выбора
-            Expanded(
-              child: Stack(
-                children: [
-                  // Общая серая полоска на заднем плане
-                  Positioned.fill(
-                    child: Align(
-                      alignment: Alignment.center,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Container(
-                          width: double.infinity,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 194, 193, 193),
-                            borderRadius: BorderRadius.circular(8),
+              // Колеса выбора
+              Expanded(
+                child: Stack(
+                  children: [
+                    // Общая серая полоска на заднем плане
+                    Positioned.fill(
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Container(
+                            width: double.infinity,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 194, 193, 193),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center, // Центрирование
-                    children: [
-                      // Числа (1-7)
-                      Expanded(
-                        flex: 1,
-                        child: ListWheelScrollView(
-                          itemExtent: 50,
-                          physics: const FixedExtentScrollPhysics(),
-                          onSelectedItemChanged: (index) {
-                            setState(() {
-                              selectedNumber = index + 1;
-                            });
-                          },
-                          children: List.generate(7, (index) {
-                            return Center(
-                              child: Text(
-                                '${index + 1}',
-                                style: const TextStyle(
-                                  fontSize: 22,
-                                  color: Color.fromARGB(255, 48, 48, 48),
+                    Row(
+                      mainAxisAlignment:
+                          MainAxisAlignment.center, // Центрирование
+                      children: [
+                        // Числа (1-7)
+                        Expanded(
+                          flex: 1,
+                          child: ListWheelScrollView(
+                            itemExtent: 50,
+                            physics: const FixedExtentScrollPhysics(),
+                            onSelectedItemChanged: (index) {
+                              setState(() {
+                                selectedNumber = index + 1;
+                              });
+                            },
+                            children: List.generate(7, (index) {
+                              return Center(
+                                child: Text(
+                                  '${index + 1}',
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    color: Color.fromARGB(255, 48, 48, 48),
+                                  ),
                                 ),
-                              ),
-                            );
-                          }),
+                              );
+                            }),
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 16), // Пространство между колесами
-                      // Единицы измерения (Дней/Недель)
-                      Expanded(
-                        flex: 1,
-                        child: ListWheelScrollView(
-                          itemExtent: 50,
-                          physics: const FixedExtentScrollPhysics(),
-                          onSelectedItemChanged: (index) {
-                            setState(() {
-                              selectedUnit = index == 0 ? 'Дней' : 'Недель';
-                            });
-                          },
-                          children: ['Дней', 'Недель'].map((unit) {
-                            return Center(
-                              child: Text(
-                                unit,
-                                style: const TextStyle(
-                                  fontSize: 22,
-                                  color: Color.fromARGB(255, 37, 37, 37),
+                        SizedBox(width: 16), // Пространство между колесами
+                        // Единицы измерения (Дней/Недель)
+                        Expanded(
+                          flex: 1,
+                          child: ListWheelScrollView(
+                            itemExtent: 50,
+                            physics: const FixedExtentScrollPhysics(),
+                            onSelectedItemChanged: (index) {
+                              setState(() {
+                                selectedUnit = index == 0 ? 'Дней' : 'Недель';
+                              });
+                            },
+                            children: ['Дней', 'Недель'].map((unit) {
+                              return Center(
+                                child: Text(
+                                  unit,
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    color: Color.fromARGB(255, 37, 37, 37),
+                                  ),
                                 ),
-                              ),
-                            );
-                          }).toList(),
+                              );
+                            }).toList(),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            // Кнопка "Сохранить"
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _intervalValue = selectedNumber;
-                    _intervalUnit = selectedUnit;
-
-                    // Конвертация в дни
-                    if (_intervalUnit == 'Недель') {
-                      _intervalValue *= 7; // Если недели, то умножаем на 7
-                      _intervalUnit = 'Дней'; // Всегда храним в днях
-                    }
-
-                    print('Выбранный интервал: $_intervalValue $_intervalUnit');
-                  });
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF197FF2),
-                  minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                ),
-                child: const Text(
-                  'Сохранить',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
+              // Кнопка "Сохранить"
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    setState(() {
+                      _intervalValue = selectedNumber;
+                      _intervalUnit = selectedUnit;
+
+                      // Конвертация в дни
+                      if (_intervalUnit == 'Недель') {
+                        _intervalValue *= 7; // Если недели, то умножаем на 7
+                        _intervalUnit = 'Дней'; // Всегда храним в днях
+                      }
+
+                      print(
+                          'Выбранный интервал: $_intervalValue $_intervalUnit');
+                    });
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF197FF2),
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  child: const Text(
+                    'Сохранить',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   Widget buildWeekdayBox() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16.0),
-        const Text(
-          'Выберите дни',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF6B7280),
+        const Padding(
+          padding: EdgeInsets.only(left: 16.0), // Отступ 16 слева
+          child: Text(
+            'Выберите дни',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF6B7280),
+            ),
           ),
         ),
         const SizedBox(height: 8.0),
@@ -467,12 +531,15 @@ class _ScheduleScreenState extends State {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16.0),
-        const Text(
-          'Настройте цикл',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF6B7280),
+        const Padding(
+          padding: EdgeInsets.only(left: 16.0), // Отступ 16 слева
+          child: Text(
+            'Настройте цикл',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF6B7280),
+            ),
           ),
         ),
         const SizedBox(height: 8.0),
@@ -509,7 +576,10 @@ class _ScheduleScreenState extends State {
                   showDurationPicker(context, isDuration: true);
                 },
               ),
-              const Divider(height: 1, color: Colors.grey),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: const Divider(height: 1, color: Colors.grey),
+              ),
               ListTile(
                 title: const Text('Длительность перерыва'),
                 trailing: Row(
@@ -543,105 +613,136 @@ class _ScheduleScreenState extends State {
       context: context,
       builder: (context) {
         return SizedBox(
-          height: 250,
+          height: 320,
           child: Column(
             children: [
               // Заголовок
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  isDuration ? 'Длительность приёма' : 'Длительность перерыва',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              // Колеса выбора
               Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Stack(
                   children: [
-                    // Выбор числа (1-7)
-                    Expanded(
-                      child: ListWheelScrollView.useDelegate(
-                        itemExtent: 42.0,
-                        onSelectedItemChanged: (int index) {
-                          setState(() {
-                            selectedNumber = index + 1;
-                          });
-                        },
-                        childDelegate: ListWheelChildBuilderDelegate(
-                          builder: (context, index) {
-                            return Center(
-                              child: Text(
-                                '${index + 1}',
-                                style: TextStyle(
-                                  fontSize:
-                                      selectedNumber == index + 1 ? 24 : 16,
-                                  fontWeight: selectedNumber == index + 1
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                ),
-                              ),
-                            );
-                          },
-                          childCount: 7, // Числа от 1 до 7
+                    // Общая серая полоска на заднем плане
+                    Positioned.fill(
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Container(
+                            width: double.infinity,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 194, 193, 193),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    // Выбор единиц измерения (дней, недель, месяцев)
-                    Expanded(
-                      child: ListWheelScrollView.useDelegate(
-                        itemExtent: 42.0,
-                        onSelectedItemChanged: (int index) {
-                          setState(() {
-                            selectedUnit = ['дней', 'недель', 'месяцев'][index];
-                          });
-                        },
-                        childDelegate: ListWheelChildBuilderDelegate(
-                          builder: (context, index) {
-                            return Center(
-                              child: Text(
-                                ['дней', 'недель', 'месяцев'][index],
-                                style: TextStyle(
-                                  fontSize: selectedUnit ==
-                                          ['дней', 'недель', 'месяцев'][index]
-                                      ? 24
-                                      : 16,
-                                  fontWeight: selectedUnit ==
-                                          ['дней', 'недель', 'месяцев'][index]
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
+                    Row(
+                      mainAxisAlignment:
+                          MainAxisAlignment.center, // Центрирование
+                      children: [
+                        // Числа (1-7)
+                        Expanded(
+                          flex: 1,
+                          child: ListWheelScrollView(
+                            itemExtent: 50,
+                            physics: const FixedExtentScrollPhysics(),
+                            onSelectedItemChanged: (index) {
+                              setState(() {
+                                selectedNumber = index + 1;
+                              });
+                            },
+                            children: List.generate(7, (index) {
+                              return Center(
+                                child: Text(
+                                  '${index + 1}',
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    color: Color.fromARGB(255, 48, 48, 48),
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                          childCount: 3, // Три варианта: дни, недели, месяцы
+                              );
+                            }),
+                          ),
                         ),
-                      ),
+                        SizedBox(width: 16), // Пространство между колесами
+                        // Единицы измерения (Дней/Недель)
+                        Expanded(
+                          flex: 1,
+                          child: ListWheelScrollView(
+                            itemExtent: 50,
+                            physics: const FixedExtentScrollPhysics(),
+                            onSelectedItemChanged: (index) {
+                              setState(() {
+                                selectedUnit = index == 0 ? 'дней' : 'недель';
+                              });
+                            },
+                            children: ['дней', 'недель'].map((unit) {
+                              return Center(
+                                child: Text(
+                                  unit,
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    color: Color.fromARGB(255, 37, 37, 37),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
               // Кнопка "Сохранить"
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16.0),
+              Padding(
+                padding: const EdgeInsets.all(16),
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
-                    if (isDuration) {
-                      setState(() {
+                    setState(() {
+                      if (isDuration) {
                         _durationValue = selectedNumber;
                         _durationUnit = selectedUnit;
-                      });
-                    } else {
-                      setState(() {
+                        if (_durationUnit == 'недель') {
+                          _durationValue *= 7; // Конвертация недель в дни
+                          _durationUnit = 'дней';
+                        }
+                      } else {
                         _breakValue = selectedNumber;
                         _breakUnit = selectedUnit;
-                      });
-                    }
+                        if (_breakUnit == 'недель') {
+                          _breakValue *= 7; // Конвертация недель в дни
+                          _breakUnit = 'дней';
+                        }
+                      }
+                      print(
+                          'Updated ${isDuration ? "duration" : "break"}: $selectedNumber $selectedUnit');
+                    });
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF197FF2),
-                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 50),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
+                      borderRadius: BorderRadius.circular(24),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
-                  child: const Text('Сохранить'),
+                  child: const Text(
+                    'Сохранить',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
                 ),
               ),
             ],
@@ -656,12 +757,15 @@ class _ScheduleScreenState extends State {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16.0),
-        const Text(
-          'Однократный прием',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF6B7280),
+        const Padding(
+          padding: EdgeInsets.only(left: 16.0), // Отступ 16 слева
+          child: Text(
+            'Однократный прием',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF6B7280),
+            ),
           ),
         ),
         const SizedBox(height: 8.0),

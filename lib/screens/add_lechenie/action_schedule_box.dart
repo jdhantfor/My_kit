@@ -19,23 +19,24 @@ class ActionScheduleBox extends StatefulWidget {
   });
 
   @override
-  _ActionScheduleBoxState createState() =>
-      _ActionScheduleBoxState(); // Исправлено здесь
+  _ActionScheduleBoxState createState() => _ActionScheduleBoxState();
 }
 
 class _ActionScheduleBoxState extends State<ActionScheduleBox> {
-  // Исправлено здесь
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Измерение',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF6B7280),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.0),
+          child: Text(
+            'Выполнение',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF6B7280),
+            ),
           ),
         ),
         const SizedBox(height: 8.0),
@@ -51,142 +52,145 @@ class _ActionScheduleBoxState extends State<ActionScheduleBox> {
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0, vertical: 12.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'График выполнения',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF0B102B),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'График выполнения',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF0B102B),
+                        ),
                       ),
-                    ),
-                    InkWell(
-                      onTap: widget.onNavigateToScheduleScreen,
-                      child: Row(
-                        children: [
-                          Text(
-                            widget.selectedScheduleType == 'daily'
-                                ? 'Ежедневно'
-                                : widget.selectedScheduleType == 'interval'
-                                    ? 'С равными интервалами'
-                                    : widget.selectedScheduleType == 'weekly'
-                                        ? 'В определенные дни недели'
-                                        : widget.selectedScheduleType ==
-                                                'cyclic'
-                                            ? 'Циклично'
-                                            : widget.selectedScheduleType ==
-                                                    'single'
-                                                ? 'Однократное выполнение'
-                                                : 'Ежедневно',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF197FF2),
+                      InkWell(
+                        onTap: widget.onNavigateToScheduleScreen,
+                        child: Row(
+                          children: [
+                            Text(
+                              widget.selectedScheduleType == 'daily'
+                                  ? 'Ежедневно'
+                                  : widget.selectedScheduleType == 'interval'
+                                      ? 'С равными интервалами'
+                                      : widget.selectedScheduleType == 'weekly'
+                                          ? 'В определенные дни недели'
+                                          : widget.selectedScheduleType ==
+                                                  'cyclic'
+                                              ? 'Циклично'
+                                              : widget.selectedScheduleType ==
+                                                      'single'
+                                                  ? 'Однократное выполнение'
+                                                  : 'Ежедневно',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF197FF2),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8.0),
-                          const Icon(
-                            Icons.chevron_right,
-                            color: Color(0xFF197FF2),
-                            size: 24,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(color: Color(0xFFE0E0E0), thickness: 1),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0, vertical: 12.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'В какое время',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF0B102B),
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () {
-                        _showMealTimePicker(context);
-                      },
-                      child: Row(
-                        children: [
-                          Text(
-                            widget.selectedMealTime,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
+                            const SizedBox(width: 8.0),
+                            const Icon(
+                              Icons.chevron_right,
                               color: Color(0xFF197FF2),
+                              size: 24,
                             ),
-                          ),
-                          const SizedBox(width: 8.0),
-                          const Icon(
-                            Icons.chevron_right,
-                            color: Color(0xFF197FF2),
-                            size: 24,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const Divider(color: Color(0xFFE0E0E0), thickness: 1),
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0, vertical: 12.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Уведомлять',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF0B102B),
+                const Divider(color: Color(0xFFE0E0E0), thickness: 1),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'В какое время',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF0B102B),
+                        ),
                       ),
-                    ),
-                    InkWell(
-                      onTap: () {
-                        _showNotificationPicker(context);
-                      },
-                      child: Row(
-                        children: [
-                          Text(
-                            widget.selectedNotification,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
+                      InkWell(
+                        onTap: () {
+                          _showMealTimePicker(context);
+                        },
+                        child: Row(
+                          children: [
+                            Text(
+                              widget.selectedMealTime,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF197FF2),
+                              ),
+                            ),
+                            const SizedBox(width: 8.0),
+                            const Icon(
+                              Icons.chevron_right,
                               color: Color(0xFF197FF2),
+                              size: 24,
                             ),
-                          ),
-                          const SizedBox(width: 8.0),
-                          const Icon(
-                            Icons.chevron_right,
-                            color: Color(0xFF197FF2),
-                            size: 24,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+                const Divider(color: Color(0xFFE0E0E0), thickness: 1),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Уведомлять',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF0B102B),
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () {
+                          _showNotificationPicker(context);
+                        },
+                        child: Row(
+                          children: [
+                            Text(
+                              widget.selectedNotification,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF197FF2),
+                              ),
+                            ),
+                            const SizedBox(width: 8.0),
+                            const Icon(
+                              Icons.chevron_right,
+                              color: Color(0xFF197FF2),
+                              size: 24,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],

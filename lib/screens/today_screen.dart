@@ -72,8 +72,13 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
         }
       });
 
-      await updateReminderStatuses();
-      print('Data loaded: ${_reminders.length} reminders, ${_actions.length} actions, ${_measurements.length} measurements');
+      // Обновляем статусы только при первой загрузке или если нужно
+      if (_reminderStatuses.isEmpty) {
+        await updateReminderStatuses();
+      }
+      _dateCarouselKey.currentState?.updateCarousel();
+      print(
+          'Data loaded: ${_reminders.length} reminders, ${_actions.length} actions, ${_measurements.length} measurements');
     }
   }
 
@@ -83,26 +88,67 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
     super.dispose();
   }
 
-  Map<DateTime, ReminderStatus> calculateDateStatuses(
+  Map<DateTime, DayStatus> calculateDateStatuses(
     List<Map<String, dynamic>> reminders,
     Map<int, Map<DateTime, ReminderStatus>> reminderStatuses,
   ) {
-    Map<DateTime, ReminderStatus> dateStatuses = {};
-    for (var reminder in reminders) {
-      int reminderId = reminder['id'];
-      var statusesForReminder = reminderStatuses[reminderId];
-      if (statusesForReminder != null) {
-        statusesForReminder.forEach((date, status) {
-          if (!dateStatuses.containsKey(date)) {
-            dateStatuses[date] = status;
-          } else if (status == ReminderStatus.incomplete) {
-            dateStatuses[date] = ReminderStatus.incomplete;
-          }
-        });
-      }
+    Map<DateTime, DayStatus> dateStatuses = {};
+    final today = DateTime.now();
+
+    if (reminders.isEmpty) {
+      return dateStatuses; // Пустой Map для пустых данных — чёрный цвет
     }
-    print('Calculated date statuses: $dateStatuses');
-    return Map<DateTime, ReminderStatus>.from(dateStatuses);
+
+    Map<DateTime, List<Map<String, dynamic>>> remindersByDate = {};
+    for (var reminder in reminders) {
+      if (reminder['type'] != 'tablet' && reminder['type'] != 'action')
+        continue;
+
+      final reminderId = reminder['id'];
+      final statuses = reminderStatuses[reminderId] ?? {};
+      statuses.forEach((date, status) {
+        final normalizedDate = DateTime(date.year, date.month, date.day);
+        if (normalizedDate.isAfter(today)) return;
+
+        if (!remindersByDate.containsKey(normalizedDate)) {
+          remindersByDate[normalizedDate] = [];
+        }
+        remindersByDate[normalizedDate]!.add(reminder);
+      });
+    }
+
+    remindersByDate.forEach((date, dateReminders) {
+      int totalApplicable = dateReminders.length;
+      int completed = 0;
+      int incomplete = 0;
+
+      for (var reminder in dateReminders) {
+        final reminderId = reminder['id'];
+        final status =
+            reminderStatuses[reminderId]?[date] ?? ReminderStatus.none;
+        if (status == ReminderStatus.complete) {
+          completed++;
+        } else if (status == ReminderStatus.incomplete) {
+          incomplete++;
+        }
+      }
+
+      if (totalApplicable == 0) {
+        // Не добавляем запись для пустых дат — остаётся status == null (чёрный)
+      } else if (completed == totalApplicable) {
+        dateStatuses[date] = DayStatus.green; // Все выполнены
+      } else if (completed > 0 && incomplete > 0) {
+        dateStatuses[date] =
+            DayStatus.yellow; // Частичное выполнение (complete и incomplete)
+      } else if (incomplete == totalApplicable) {
+        dateStatuses[date] = DayStatus.red; // Все не выполнены
+      }
+
+      print(
+          'Date $date: Total=$totalApplicable, Completed=$completed, Incomplete=$incomplete, Status=${dateStatuses[date]}');
+    });
+
+    return dateStatuses;
   }
 
   Future<void> _loadReminders() async {
@@ -131,27 +177,15 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
       );
 
       final databaseService = DatabaseService();
-      final rawStatuses = await databaseService.getReminderStatusesForDates(
-          userId, allDatesInCarousel);
+      final Map<int, Map<DateTime, ReminderStatus>> rawStatuses =
+          await databaseService.getReminderStatusesForDates(
+              userId, allDatesInCarousel);
 
       print('Raw statuses from database: $rawStatuses');
 
       setState(() {
-        _reminderStatuses = {};
-        rawStatuses.forEach((reminderId, dateStatusMap) {
-          if (_reminderStatuses[reminderId] == null) {
-            _reminderStatuses[reminderId] = {};
-          }
-          dateStatusMap.forEach((date, isCompleted) {
-            _reminderStatuses[reminderId]![
-                    DateTime(date.year, date.month, date.day)] =
-                isCompleted == null
-                    ? ReminderStatus.none
-                    : (isCompleted == true
-                        ? ReminderStatus.complete
-                        : ReminderStatus.incomplete);
-          });
-        });
+        _reminderStatuses =
+            rawStatuses; // Прямое присваивание, так как типы совпадают
       });
 
       print('Updated reminder statuses: $_reminderStatuses');
@@ -185,286 +219,325 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
   }
 
   Widget buildReminderGroup(
-  BuildContext context,
-  String time,
-  List<Map<String, dynamic>> reminders,
-  DateTime selectedDate,
-  Map<int, Map<DateTime, ReminderStatus>> reminderStatuses,
-  Function loadReminders,
-  GlobalKey<DateCarouselState> dateCarouselKey,
-) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              time,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF0B102B),
-              ),
-            ),
-            if (reminders.any((r) => r['type'] == 'tablet' || r['type'] == 'action'))
-              TextButton(
-                onPressed: () async {
-                  print('Marking all reminders at $time as completed');
-                  final userId =
-                      Provider.of<UserProvider>(context, listen: false).userId;
-                  if (userId != null) {
-                    final databaseService = DatabaseService();
-                    for (var reminder in reminders) {
-                      if (reminder['type'] == 'tablet' ||
-                          reminder['type'] == 'action') {
-                        final reminderId = reminder['id'] as int;
-                        await databaseService.updateReminderCompletionStatus(
-                          reminderId,
-                          true,
-                          selectedDate,
-                        );
-                        print(
-                            'Marked reminder $reminderId at $time as completed');
-                        // Обновляем локальный статус немедленно
-                        setState(() {
-                          _localReminderStatuses[reminderId] = true;
-                        });
-                      }
-                    }
-                    await loadReminders();
-                    dateCarouselKey.currentState?.updateCarousel();
-                  }
-                },
-                child: const Text(
-                  'Принять все',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF197FF2), // Синий цвет, как на картинке
-                  ),
+    BuildContext context,
+    String time,
+    List<Map<String, dynamic>> reminders,
+    DateTime selectedDate,
+    Map<int, Map<DateTime, ReminderStatus>> reminderStatuses,
+    Function loadReminders,
+    GlobalKey<DateCarouselState> dateCarouselKey,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                time,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF0B102B),
                 ),
               ),
-          ],
+              if (reminders
+                  .any((r) => r['type'] == 'tablet' || r['type'] == 'action'))
+                TextButton(
+                  onPressed: () async {
+                    final userId =
+                        Provider.of<UserProvider>(context, listen: false)
+                            .userId;
+                    if (userId != null) {
+                      final databaseService = DatabaseService();
+                      bool hasError = false;
+                      String? errorMessage;
+                      for (var reminder in reminders) {
+                        if (reminder['type'] == 'tablet' ||
+                            reminder['type'] == 'action') {
+                          final reminderId = reminder['id'] as int;
+                          try {
+                            await databaseService
+                                .updateReminderCompletionStatus(
+                              reminderId,
+                              true,
+                              selectedDate,
+                            );
+                            setState(() {
+                              _reminderStatuses[reminderId] ??= {};
+                              _reminderStatuses[reminderId]![DateTime(
+                                selectedDate.year,
+                                selectedDate.month,
+                                selectedDate.day,
+                              )] = ReminderStatus.complete;
+                              _localReminderStatuses[reminderId] = true;
+                            });
+                          } catch (e) {
+                            hasError = true;
+                            errorMessage = e.toString();
+                          }
+                        }
+                      }
+                      if (hasError) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content:
+                                  Text('Ошибка при обновлении: $errorMessage')),
+                        );
+                      }
+                      dateCarouselKey.currentState?.updateCarousel();
+                    }
+                  },
+                  child: const Text(
+                    'Принять все',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF197FF2),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
-      ),
-      Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24.0),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 4.0,
-              offset: const Offset(0, 2),
-            ),
-          ],
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24.0),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 4.0,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            children: reminders
+                .map((reminder) => buildReminderTile(
+                      context,
+                      reminder,
+                      selectedDate,
+                      reminderStatuses,
+                      loadReminders,
+                      dateCarouselKey,
+                      _localReminderStatuses,
+                      (int id, bool value) {
+                        setState(() {
+                          _localReminderStatuses[id] = value;
+                        });
+                        print('Local status updated for reminder $id: $value');
+                      },
+                    ))
+                .toList(),
+          ),
         ),
-        child: Column(
-          children: reminders
-              .map((reminder) => buildReminderTile(
-                    context,
-                    reminder,
-                    selectedDate,
-                    reminderStatuses,
-                    loadReminders,
-                    dateCarouselKey,
-                    _localReminderStatuses,
-                    (int id, bool value) {
-                      setState(() {
-                        _localReminderStatuses[id] = value;
-                      });
-                      print('Local status updated for reminder $id: $value');
-                    },
-                  ))
-              .toList(),
-        ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 
   Widget buildReminderTile(
-  BuildContext context,
-  Map<String, dynamic> reminder,
-  DateTime selectedDate,
-  Map<int, Map<DateTime, ReminderStatus>> reminderStatuses,
-  Function loadReminders,
-  GlobalKey<DateCarouselState> dateCarouselKey,
-  Map<int, bool> localReminderStatuses,
-  Function(int, bool) onStatusChanged,
-) {
-  final reminderId = reminder['id'];
-  final type = reminder['type'] ?? 'tablet';
-  bool isCompleted = localReminderStatuses[reminderId] ?? false;
+    BuildContext context,
+    Map<String, dynamic> reminder,
+    DateTime selectedDate,
+    Map<int, Map<DateTime, ReminderStatus>> reminderStatuses,
+    Function loadReminders,
+    GlobalKey<DateCarouselState> dateCarouselKey,
+    Map<int, bool> localReminderStatuses,
+    Function(int, bool) onStatusChanged,
+  ) {
+    final reminderId = reminder['id'];
+    final type = reminder['type'] ?? 'tablet';
+    bool isCompleted = localReminderStatuses[reminderId] ?? false;
+    final today = DateTime.now();
+    final isPastOrToday = selectedDate.year < today.year ||
+        (selectedDate.year == today.year && selectedDate.month < today.month) ||
+        (selectedDate.year == today.year &&
+            selectedDate.month == today.month &&
+            selectedDate.day <= today.day);
 
-  String name = reminder['name'] ?? 'Название не указано';
-  String subtitleText = '';
+    String name = reminder['name'] ?? 'Название не указано';
+    String subtitleText = '';
 
-  if (type == 'tablet') {
-    if (reminder.containsKey('dosage') && reminder.containsKey('unit')) {
-      subtitleText = '${reminder['dosage']} ${reminder['unit']}';
+    if (type == 'tablet') {
+      if (reminder.containsKey('dosage') && reminder.containsKey('unit')) {
+        subtitleText = '${reminder['dosage']} ${reminder['unit']}';
+      }
+      if (reminder.containsKey('time')) {
+        subtitleText += ' - ${reminder['time']}';
+        print('time for reminder $reminderId: ${reminder['time']}');
+      } else {
+        print('No time found for reminder $reminderId');
+      }
+    } else if (type == 'action' || type == 'measurement') {
+      subtitleText = reminder['time'] ?? '';
+      print('Subtitle for reminder $reminderId (type: $type): $subtitleText');
     }
-    if (reminder.containsKey('time')) {
-      subtitleText += ' - ${reminder['time']}';
-      print('time for reminder $reminderId: ${reminder['time']}');
+
+    Widget trailingWidget;
+    if (type == 'tablet' || type == 'action') {
+      trailingWidget = Checkbox(
+        value: isCompleted,
+        onChanged: isPastOrToday
+            ? (bool? value) async {
+                if (value != null) {
+                  onStatusChanged(reminderId, value); // Локальное обновление
+                  final databaseService = DatabaseService();
+                  try {
+                    await databaseService.updateReminderCompletionStatus(
+                      reminderId,
+                      value,
+                      selectedDate,
+                    );
+                    setState(() {
+                      _reminderStatuses[reminderId] ??= {};
+                      _reminderStatuses[reminderId]![DateTime(
+                        selectedDate.year,
+                        selectedDate.month,
+                        selectedDate.day,
+                      )] = value
+                          ? ReminderStatus.complete
+                          : ReminderStatus.incomplete;
+                      _localReminderStatuses[reminderId] = value;
+                    });
+                    dateCarouselKey.currentState?.updateCarousel();
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Ошибка при обновлении: $e')),
+                    );
+                    onStatusChanged(reminderId, !value); // Откат
+                  }
+                }
+              }
+            : null,
+        shape: const CircleBorder(),
+        activeColor: const Color(0xFF197FF2),
+        checkColor: Colors.white,
+      );
     } else {
-      print('No time found for reminder $reminderId');
+      trailingWidget = const Icon(Icons.arrow_forward_ios_rounded);
     }
-  } else if (type == 'action' || type == 'measurement') {
-    subtitleText = reminder['time'] ?? '';
-    print('Subtitle for reminder $reminderId (type: $type): $subtitleText');
-  }
 
-  Widget trailingWidget;
-  if (type == 'tablet' || type == 'action') {
-    trailingWidget = Checkbox(
-      value: isCompleted,
-      onChanged: (bool? value) async {
-        if (value != null) {
-          print('Updating local status for reminder $reminderId to $value');
-          onStatusChanged(reminderId, value);
-
-          final databaseService = DatabaseService();
-          try {
-            await databaseService.updateReminderCompletionStatus(
-              reminderId,
-              value,
-              selectedDate,
+    // Добавляем кнопку с названием курса, если есть courseid и тип не 'measurement', и courseid != -1
+    Widget courseButton = const SizedBox.shrink(); // Пустой виджет по умолчанию
+    if (reminder.containsKey('courseid') &&
+        type != 'measurement' &&
+        reminder['courseid'] != -1) {
+      final courseId = reminder['courseid'] as int;
+      final userId = Provider.of<UserProvider>(context, listen: false).userId;
+      if (userId != null) {
+        courseButton = FutureBuilder<String>(
+          future: DatabaseService.getCourseName(courseId, userId),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox
+                  .shrink(); // Показываем пустой виджет, пока данные загружаются
+            }
+            if (snapshot.hasError) {
+              print('Error loading course name: ${snapshot.error}');
+              return const SizedBox.shrink();
+            }
+            final courseName = snapshot.data ?? 'Курс';
+            return GestureDetector(
+              onTap: () {
+                print(
+                    'Navigating to TreatmentDetailsScreen for course $courseId');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TreatmentDetailsScreen(
+                      course: {
+                        'id': courseId,
+                        'name': courseName,
+                        'startDate':
+                            reminder['startDate'], // Можно уточнить, если нужно
+                        'endDate':
+                            reminder['endDate'], // Можно уточнить, если нужно
+                      },
+                      userId: userId,
+                      color: const Color(
+                          0xFF6B48FF), // Фиолетовый цвет, как у кнопки
+                    ),
+                  ),
+                );
+              },
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                decoration: BoxDecoration(
+                  color: const Color(
+                      0xFF6B48FF), // Фиолетовый цвет, как на картинке
+                  borderRadius: BorderRadius.circular(12.0),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      courseName,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 4.0),
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 12,
+                      color: Colors.white,
+                    ),
+                  ],
+                ),
+              ),
             );
-            print(
-                'Successfully updated reminder status in database for $reminderId');
-            await loadReminders();
-            dateCarouselKey.currentState?.updateCarousel();
-          } catch (e) {
-            print('Error updating reminder status in database: $e');
-            onStatusChanged(reminderId, !value);
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Ошибка при обновлении статуса')),
-            );
-          }
-        }
-      },
-      shape: const CircleBorder(),
-      activeColor: const Color(0xFF197FF2),
-      checkColor: Colors.white,
-    );
-  } else {
-    trailingWidget = const Icon(Icons.arrow_forward_ios_rounded);
-  }
+          },
+        );
+      }
+    }
 
-  // Добавляем кнопку с названием курса, если есть courseid и тип не 'measurement', и courseid != -1
-  Widget courseButton = const SizedBox.shrink(); // Пустой виджет по умолчанию
-  if (reminder.containsKey('courseid') &&
-      type != 'measurement' &&
-      reminder['courseid'] != -1) {
-    final courseId = reminder['courseid'] as int;
-    final userId = Provider.of<UserProvider>(context, listen: false).userId;
-    if (userId != null) {
-      courseButton = FutureBuilder<String>(
-        future: DatabaseService.getCourseName(courseId, userId),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SizedBox.shrink(); // Показываем пустой виджет, пока данные загружаются
-          }
-          if (snapshot.hasError) {
-            print('Error loading course name: ${snapshot.error}');
-            return const SizedBox.shrink();
-          }
-          final courseName = snapshot.data ?? 'Курс';
-          return GestureDetector(
-            onTap: () {
-              print('Navigating to TreatmentDetailsScreen for course $courseId');
+    return ListTile(
+      title: Row(
+        children: [
+          Flexible(
+            child: Text(
+              name,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: isCompleted ? Colors.grey : const Color(0xFF0B102B),
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8.0), // Добавляем отступ между именем и кнопкой
+          courseButton, // Добавляем кнопку курса
+        ],
+      ),
+      subtitle: Text(
+        subtitleText,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+          color: isCompleted ? Colors.grey : const Color(0xFF6B7280),
+        ),
+      ),
+      trailing: trailingWidget,
+      onTap: type == 'measurement'
+          ? () {
+              print('Navigating to OverviewScreen');
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => TreatmentDetailsScreen(
-                    course: {
-                      'id': courseId,
-                      'name': courseName,
-                      'startDate': reminder['startDate'], // Можно уточнить, если нужно
-                      'endDate': reminder['endDate'], // Можно уточнить, если нужно
-                    },
-                    userId: userId,
-                    color: const Color(0xFF6B48FF), // Фиолетовый цвет, как у кнопки
-                  ),
+                  builder: (context) => OverviewScreen(),
                 ),
               );
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6B48FF), // Фиолетовый цвет, как на картинке
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    courseName,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(width: 4.0),
-                  const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 12,
-                    color: Colors.white,
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-    }
+            }
+          : null,
+    );
   }
 
-  return ListTile(
-    title: Row(
-      children: [
-        Flexible(
-          child: Text(
-            name,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: isCompleted ? Colors.grey : const Color(0xFF0B102B),
-            ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        const SizedBox(width: 8.0), // Добавляем отступ между именем и кнопкой
-        courseButton, // Добавляем кнопку курса
-      ],
-    ),
-    subtitle: Text(
-      subtitleText,
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        color: isCompleted ? Colors.grey : const Color(0xFF6B7280),
-      ),
-    ),
-    trailing: trailingWidget,
-    onTap: type == 'measurement'
-        ? () {
-            print('Navigating to OverviewScreen');
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => OverviewScreen(),
-              ),
-            );
-          }
-        : null,
-  );
-}
   // Перенесенная функция buildCircularIconButton
   Widget buildCircularIconButton({
     required String iconAsset,
@@ -492,83 +565,83 @@ class _TodayScreenState extends State<TodayScreen> with WidgetsBindingObserver {
     );
   }
 
- @override
-Widget build(BuildContext context) {
-  final allReminders = <Map<String, dynamic>>[];
-  allReminders.addAll(_reminders);
-  allReminders.addAll(_actions);
-  allReminders.addAll(_measurements);
+  @override
+  Widget build(BuildContext context) {
+    final allReminders = <Map<String, dynamic>>[];
+    allReminders.addAll(_reminders);
+    allReminders.addAll(_actions);
+    allReminders.addAll(_measurements);
 
-  final groupedReminders = groupRemindersByTime(allReminders);
+    final groupedReminders = groupRemindersByTime(allReminders);
 
-  return Scaffold(
-    appBar: AppBar(
-      automaticallyImplyLeading: false,
-      title: const Text(
-        'Моё расписание',
-        style: TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF0B102B),
+    return Scaffold(
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        title: const Text(
+          'Моё расписание',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF0B102B),
+          ),
         ),
+        actions: [
+          buildCircularIconButton(
+            iconAsset: 'assets/prof.png',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileScreen()),
+              ).then((_) {
+                _dateCarouselKey.currentState?.scrollToToday();
+              });
+            },
+            size: 36,
+          ),
+          const SizedBox(width: 6),
+          buildCircularIconButton(
+            iconAsset: 'assets/noti.png',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const NotificationsScreen()),
+              );
+            },
+            size: 36,
+          ),
+          const SizedBox(width: 20),
+        ],
       ),
-      actions: [
-        buildCircularIconButton(
-          iconAsset: 'assets/prof.png',
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ProfileScreen()),
-            ).then((_) {
-              _dateCarouselKey.currentState?.scrollToToday();
-            });
-          },
-          size: 36,
-        ),
-        const SizedBox(width: 6),
-        buildCircularIconButton(
-          iconAsset: 'assets/noti.png',
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const NotificationsScreen()),
-            );
-          },
-          size: 36,
-        ),
-        const SizedBox(width: 20),
-      ],
-    ),
-    body: Column(
-      children: [
-        DateCarousel(
-          key: _dateCarouselKey,
-          selectedDate: _selectedDate,
-          onDateSelected: _onDateSelected,
-          reminderStatuses:
-              calculateDateStatuses(_reminders, _reminderStatuses),
-        ),
-        Expanded(
-          child: allReminders.isNotEmpty
-              ? ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  children: groupedReminders.entries
-                      .map((entry) => buildReminderGroup(
-                            context,
-                            entry.key,
-                            entry.value,
-                            _selectedDate,
-                            _reminderStatuses,
-                            _loadReminders,
-                            _dateCarouselKey,
-                          ))
-                      .toList(),
-                )
-              : const EmptyStateWidget(),
-        ),
-      ],
-    ),
-  );
-}
+      body: Column(
+        children: [
+          DateCarousel(
+            key: _dateCarouselKey,
+            selectedDate: _selectedDate,
+            onDateSelected: _onDateSelected,
+            reminderStatuses: calculateDateStatuses(_reminders,
+                _reminderStatuses), // Тип теперь Map<DateTime, DayStatus>
+          ),
+          Expanded(
+            child: allReminders.isNotEmpty
+                ? ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    children: groupedReminders.entries
+                        .map((entry) => buildReminderGroup(
+                              context,
+                              entry.key,
+                              entry.value,
+                              _selectedDate,
+                              _reminderStatuses,
+                              _loadReminders,
+                              _dateCarouselKey,
+                            ))
+                        .toList(),
+                  )
+                : const EmptyStateWidget(),
+          ),
+        ],
+      ),
+    );
+  }
 }

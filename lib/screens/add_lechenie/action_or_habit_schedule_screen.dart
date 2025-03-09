@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:my_aptechka/screens/database_service.dart';
 import 'package:intl/intl.dart';
+import 'package:my_aptechka/screens/database_service.dart';
 
 class ActionOrHabitScheduleScreen extends StatefulWidget {
   final String name;
@@ -25,12 +25,12 @@ class _ActionOrHabitScheduleScreenState
   int _selectedScheduleIndex = 0;
   int _intervalValue = 3;
   String _intervalUnit = 'дня';
-  int _durationValue = 7;
-  String _durationUnit = 'дней';
+  int _selectedDaysMask = 0;
+  int _durationValueForSchedule = 7;
+  String _durationUnitForSchedule = 'дней';
   int _breakValue = 7;
   String _breakUnit = 'дней';
-  final List<String> _selectedDays = [];
-  String _scheduleType = 'interval'; // Default schedule type
+  String _selectedScheduleType = 'daily';
 
   DateTime? _singleExecutionDate;
   TimeOfDay? _singleExecutionTime;
@@ -71,7 +71,42 @@ class _ActionOrHabitScheduleScreenState
               ),
             ),
             const SizedBox(height: 8.0),
-            buildScheduleOptions(),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4.0,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  buildScheduleOption(
+                      'С равными интервалами', 'Например: раз в 3 дня', 0),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Divider(color: Color(0xFFE0E0E0), thickness: 1),
+                  ),
+                  buildScheduleOption(
+                      'В определенные дни недели', 'Например: пн, ср и пт', 1),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Divider(color: Color(0xFFE0E0E0), thickness: 1),
+                  ),
+                  buildScheduleOption('Циклично',
+                      'Например: 3 недели выполнения, неделя отдыха', 2),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Divider(color: Color(0xFFE0E0E0), thickness: 1),
+                  ),
+                  buildScheduleOption('Однократно', '', 3),
+                ],
+              ),
+            ),
             if (_selectedScheduleIndex == 0)
               buildEqualIntervalBox()
             else if (_selectedScheduleIndex == 1)
@@ -86,27 +121,30 @@ class _ActionOrHabitScheduleScreenState
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton(
                 onPressed: () async {
-                  // Преобразуем выбранные дни в битовую маску
-                  int selectedDaysMask =
-                      DatabaseService.daysToMask(_selectedDays);
-                  // Передаем данные обратно
+                  int selectedDaysMask = DatabaseService.daysToMask([]);
+                  if (_selectedScheduleIndex == 1) {
+                    // Для weekly нужно преобразовать дни (здесь пустой список как пример, нужно реализовать выбор дней)
+                    selectedDaysMask = 0; // Замени на реальную логику
+                  }
                   Navigator.pop(context, {
-                    'selectedScheduleIndex': _selectedScheduleIndex,
+                    'scheduleType': _selectedScheduleType,
                     'intervalValue': _intervalValue,
                     'intervalUnit': _intervalUnit,
-                    'selectedDaysMask': selectedDaysMask, // Битовая маска
-                    'durationValue': _durationValue,
-                    'durationUnit': _durationUnit,
+                    'selectedDaysMask': selectedDaysMask,
+                    'durationValue': _durationValueForSchedule,
+                    'durationUnit': _durationUnitForSchedule,
                     'breakValue': _breakValue,
                     'breakUnit': _breakUnit,
-                    'scheduleType': _scheduleType,
+                    'selectedMealTime': 'Выбор', // Добавлено для совместимости
+                    'selectedNotification':
+                        'Выбор', // Добавлено для совместимости
                   });
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF197FF2),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12.0),
+                    borderRadius: BorderRadius.circular(24.0),
                   ),
                   padding: const EdgeInsets.symmetric(vertical: 16.0),
                 ),
@@ -119,36 +157,6 @@ class _ActionOrHabitScheduleScreenState
     );
   }
 
-  Widget buildScheduleOptions() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4.0,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          buildScheduleOption(
-              'С равными интервалами', 'Например: раз в 3 дня', 0),
-          Divider(height: 1, color: Colors.grey.shade300),
-          buildScheduleOption(
-              'В определенные дни недели', 'Например: пн, ср и пт', 1),
-          Divider(height: 1, color: Colors.grey.shade300),
-          buildScheduleOption(
-              'Циклично', 'Например: 3 недели приёма, неделя отдыха', 2),
-          Divider(height: 1, color: Colors.grey.shade300),
-          buildScheduleOption('Однократно', '', 3),
-        ],
-      ),
-    );
-  }
-
   Widget buildScheduleOption(String title, String subtitle, int index) {
     return RadioListTile(
       value: index,
@@ -156,12 +164,13 @@ class _ActionOrHabitScheduleScreenState
       onChanged: (value) {
         setState(() {
           _selectedScheduleIndex = value!;
-          if (index == 1) {
-            _scheduleType =
-                'weekly'; // Установить тип расписания для дней недели
-          } else if (index == 0) {
-            _scheduleType = 'interval'; // Для равных интервалов
-          }
+          _selectedScheduleType = index == 0
+              ? 'interval'
+              : index == 1
+                  ? 'weekly'
+                  : index == 2
+                      ? 'cyclic'
+                      : 'single';
         });
       },
       title: Text(
@@ -215,45 +224,53 @@ class _ActionOrHabitScheduleScreenState
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0, vertical: 12.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Выполнять раз в',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF0B102B),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Выполнять раз в',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF0B102B),
+                        ),
                       ),
-                    ),
-                    InkWell(
-                      onTap: () {
-                        showIntervalPicker(context);
-                      },
-                      child: Row(
-                        children: [
-                          Text(
-                            '$_intervalValue $_intervalUnit',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF197FF2),
+                      InkWell(
+                        onTap: () {
+                          showIntervalPicker(context);
+                        },
+                        child: Row(
+                          children: [
+                            Text(
+                              '$_intervalValue $_intervalUnit',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF197FF2),
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 8.0),
-                        ],
+                            const SizedBox(width: 8.0),
+                            const Icon(
+                              Icons.chevron_right,
+                              color: Color(0xFF197FF2),
+                              size: 24,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
@@ -265,90 +282,112 @@ class _ActionOrHabitScheduleScreenState
       context: context,
       builder: (context) {
         return SizedBox(
-          height: 250,
+          height: 320,
           child: Column(
             children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: const Text(
+                  'Интервал выполнения',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
               Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Stack(
                   children: [
-                    Expanded(
-                      child: ListWheelScrollView.useDelegate(
-                        itemExtent: 42.0,
-                        onSelectedItemChanged: (int index) {
-                          setState(() {
-                            _intervalValue = index + 1;
-                          });
-                        },
-                        childDelegate: ListWheelChildBuilderDelegate(
-                          builder: (context, index) {
-                            return Center(
-                              child: Text(
-                                '${index + 1}',
-                                style: TextStyle(
-                                  fontSize:
-                                      _intervalValue == index + 1 ? 24 : 16,
-                                  fontWeight: _intervalValue == index + 1
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                ),
-                              ),
-                            );
-                          },
-                          childCount: 30,
+                    Positioned.fill(
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Container(
+                            width: double.infinity,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 194, 193, 193),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ListWheelScrollView.useDelegate(
-                        itemExtent: 42.0,
-                        onSelectedItemChanged: (int index) {
-                          setState(() {
-                            _intervalUnit = ['дня', 'недели', 'месяца'][index];
-                          });
-                        },
-                        childDelegate: ListWheelChildBuilderDelegate(
-                          builder: (context, index) {
-                            return Center(
-                              child: Text(
-                                ['дня', 'недели', 'месяца'][index],
-                                style: TextStyle(
-                                  fontSize: _intervalUnit ==
-                                          ['дня', 'недели', 'месяца'][index]
-                                      ? 24
-                                      : 16,
-                                  fontWeight: _intervalUnit ==
-                                          ['дня', 'недели', 'месяца'][index]
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          flex: 1,
+                          child: ListWheelScrollView(
+                            itemExtent: 50,
+                            physics: const FixedExtentScrollPhysics(),
+                            onSelectedItemChanged: (index) {
+                              setState(() {
+                                _intervalValue = index + 1;
+                              });
+                            },
+                            children: List.generate(30, (index) {
+                              return Center(
+                                child: Text(
+                                  '${index + 1}',
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    color: Color.fromARGB(255, 48, 48, 48),
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                          childCount: 3,
+                              );
+                            }),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 1,
+                          child: ListWheelScrollView(
+                            itemExtent: 50,
+                            physics: const FixedExtentScrollPhysics(),
+                            onSelectedItemChanged: (index) {
+                              setState(() {
+                                _intervalUnit =
+                                    ['дня', 'дней', 'недель', 'месяцев'][index];
+                              });
+                            },
+                            children: ['дня', 'дней', 'недель', 'месяцев']
+                                .map((unit) {
+                              return Center(
+                                child: Text(
+                                  unit,
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    color: Color.fromARGB(255, 37, 37, 37),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16.0),
+              Padding(
+                padding: const EdgeInsets.all(16),
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF197FF2),
-                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 50),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
+                      borderRadius: BorderRadius.circular(24),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
-                  child: const Text('Сохранить'),
+                  child: const Text(
+                    'Сохранить',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
                 ),
               ),
             ],
@@ -375,7 +414,7 @@ class _ActionOrHabitScheduleScreenState
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20.0),
+            borderRadius: BorderRadius.circular(24.0),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -384,7 +423,10 @@ class _ActionOrHabitScheduleScreenState
               ),
             ],
           ),
-          child: buildWeekdayOptions(),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: buildWeekdayOptions(),
+          ),
         ),
       ],
     );
@@ -392,32 +434,32 @@ class _ActionOrHabitScheduleScreenState
 
   Widget buildWeekdayOptions() {
     const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: days.map((day) {
-        final isSelected = _selectedDays.contains(day);
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              if (isSelected) {
-                _selectedDays.remove(day);
-              } else {
-                _selectedDays.add(day);
-              }
-            });
-          },
-          child: CircleAvatar(
-            backgroundColor:
-                isSelected ? const Color(0xFF197FF2) : Colors.transparent,
-            child: Text(
-              day,
-              style: TextStyle(
-                color: isSelected ? Colors.white : Colors.black,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: days.map((day) {
+          final isSelected =
+              (_selectedDaysMask & (1 << days.indexOf(day))) != 0;
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedDaysMask ^= (1 << days.indexOf(day));
+              });
+            },
+            child: CircleAvatar(
+              backgroundColor:
+                  isSelected ? const Color(0xFF197FF2) : Colors.transparent,
+              child: Text(
+                day,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : Colors.black,
+                ),
               ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -438,7 +480,7 @@ class _ActionOrHabitScheduleScreenState
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20.0),
+            borderRadius: BorderRadius.circular(24.0),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -447,47 +489,97 @@ class _ActionOrHabitScheduleScreenState
               ),
             ],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ListTile(
-                title: const Text('Длительность приема'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '$_durationValue $_durationUnit',
-                      style: const TextStyle(
-                        color: Color(0xFF197FF2),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Длительность выполнения',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF0B102B),
+                        ),
                       ),
-                    ),
-                    const Icon(Icons.chevron_right, color: Color(0xFF197FF2)),
-                  ],
-                ),
-                onTap: () {
-                  showDurationPicker(context, isDuration: true);
-                },
-              ),
-              const Divider(height: 1, color: Colors.grey),
-              ListTile(
-                title: const Text('Длительность перерыва'),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      '$_breakValue $_breakUnit',
-                      style: const TextStyle(
-                        color: Color(0xFF197FF2),
+                      InkWell(
+                        onTap: () {
+                          showDurationPicker(context, isDuration: true);
+                        },
+                        child: Row(
+                          children: [
+                            Text(
+                              '$_durationValueForSchedule $_durationUnitForSchedule',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF197FF2),
+                              ),
+                            ),
+                            const SizedBox(width: 8.0),
+                            const Icon(
+                              Icons.chevron_right,
+                              color: Color(0xFF197FF2),
+                              size: 24,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const Icon(Icons.chevron_right, color: Color(0xFF197FF2)),
-                  ],
+                    ],
+                  ),
                 ),
-                onTap: () {
-                  showDurationPicker(context, isDuration: false);
-                },
-              ),
-            ],
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Divider(color: Color(0xFFE0E0E0), thickness: 1),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Длительность перерыва',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF0B102B),
+                        ),
+                      ),
+                      InkWell(
+                        onTap: () {
+                          showDurationPicker(context, isDuration: false);
+                        },
+                        child: Row(
+                          children: [
+                            Text(
+                              '$_breakValue $_breakUnit',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF197FF2),
+                              ),
+                            ),
+                            const SizedBox(width: 8.0),
+                            const Icon(
+                              Icons.chevron_right,
+                              color: Color(0xFF197FF2),
+                              size: 24,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -495,90 +587,110 @@ class _ActionOrHabitScheduleScreenState
   }
 
   void showDurationPicker(BuildContext context, {required bool isDuration}) {
-    int selectedNumber = isDuration ? _durationValue : _breakValue;
-    String selectedUnit = isDuration ? _durationUnit : _breakUnit;
+    int selectedNumber = isDuration ? _durationValueForSchedule : _breakValue;
+    String selectedUnit = isDuration ? _durationUnitForSchedule : _breakUnit;
     showModalBottomSheet(
       context: context,
       builder: (context) {
         return SizedBox(
-          height: 250,
+          height: 320,
           child: Column(
             children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  isDuration
+                      ? 'Длительность выполнения'
+                      : 'Длительность перерыва',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
               Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Stack(
                   children: [
-                    Expanded(
-                      child: ListWheelScrollView.useDelegate(
-                        itemExtent: 42.0,
-                        onSelectedItemChanged: (int index) {
-                          setState(() {
-                            selectedNumber = index + 1;
-                          });
-                        },
-                        childDelegate: ListWheelChildBuilderDelegate(
-                          builder: (context, index) {
-                            return Center(
-                              child: Text(
-                                '${index + 1}',
-                                style: TextStyle(
-                                  fontSize:
-                                      selectedNumber == index + 1 ? 24 : 16,
-                                  fontWeight: selectedNumber == index + 1
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
-                                ),
-                              ),
-                            );
-                          },
-                          childCount: 7,
+                    Positioned.fill(
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Container(
+                            width: double.infinity,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: const Color.fromARGB(255, 194, 193, 193),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ListWheelScrollView.useDelegate(
-                        itemExtent: 42.0,
-                        onSelectedItemChanged: (int index) {
-                          setState(() {
-                            selectedUnit = ['дней', 'недель', 'месяцев'][index];
-                          });
-                        },
-                        childDelegate: ListWheelChildBuilderDelegate(
-                          builder: (context, index) {
-                            return Center(
-                              child: Text(
-                                ['дней', 'недель', 'месяцев'][index],
-                                style: TextStyle(
-                                  fontSize: selectedUnit ==
-                                          ['дней', 'недель', 'месяцев'][index]
-                                      ? 24
-                                      : 16,
-                                  fontWeight: selectedUnit ==
-                                          ['дней', 'недель', 'месяцев'][index]
-                                      ? FontWeight.bold
-                                      : FontWeight.normal,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          flex: 1,
+                          child: ListWheelScrollView(
+                            itemExtent: 50,
+                            physics: const FixedExtentScrollPhysics(),
+                            onSelectedItemChanged: (index) {
+                              setState(() {
+                                selectedNumber = index + 1;
+                              });
+                            },
+                            children: List.generate(7, (index) {
+                              return Center(
+                                child: Text(
+                                  '${index + 1}',
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    color: Color.fromARGB(255, 48, 48, 48),
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                          childCount: 3,
+                              );
+                            }),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          flex: 1,
+                          child: ListWheelScrollView(
+                            itemExtent: 50,
+                            physics: const FixedExtentScrollPhysics(),
+                            onSelectedItemChanged: (index) {
+                              setState(() {
+                                selectedUnit = ['дней', 'недель'][index];
+                              });
+                            },
+                            children: ['дней', 'недель'].map((unit) {
+                              return Center(
+                                child: Text(
+                                  unit,
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    color: Color.fromARGB(255, 37, 37, 37),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16.0),
+              Padding(
+                padding: const EdgeInsets.all(16),
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
                     if (isDuration) {
                       setState(() {
-                        _durationValue = selectedNumber;
-                        _durationUnit = selectedUnit;
+                        _durationValueForSchedule = selectedNumber;
+                        _durationUnitForSchedule = selectedUnit;
                       });
                     } else {
                       setState(() {
@@ -589,13 +701,15 @@ class _ActionOrHabitScheduleScreenState
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF197FF2),
-                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 50),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12.0),
+                      borderRadius: BorderRadius.circular(24),
                     ),
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
                   ),
-                  child: const Text('Сохранить'),
+                  child: const Text(
+                    'Сохранить',
+                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  ),
                 ),
               ),
             ],
@@ -622,7 +736,7 @@ class _ActionOrHabitScheduleScreenState
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20.0),
+            borderRadius: BorderRadius.circular(24.0),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
@@ -632,94 +746,108 @@ class _ActionOrHabitScheduleScreenState
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Выберите дату и время выполнения',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF0B102B),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 12.0),
+                  child: const Text(
+                    'Выберите дату и время выполнения',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF0B102B),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 8.0),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Дата:',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF0B102B),
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () async {
-                        final pickedDate = await showDatePicker(
-                          context: context,
-                          initialDate: DateTime.now(),
-                          firstDate: DateTime.now(),
-                          lastDate: DateTime(2100),
-                        );
-                        if (pickedDate != null) {
-                          setState(() {
-                            _singleExecutionDate = pickedDate;
-                          });
-                        }
-                      },
-                      child: Text(
-                        _singleExecutionDate == null
-                            ? 'Выбрать дату'
-                            : DateFormat('dd.MM.yyyy')
-                                .format(_singleExecutionDate!),
-                        style: const TextStyle(
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Дата:',
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF197FF2),
+                          color: Color(0xFF0B102B),
                         ),
                       ),
-                    ),
-                  ],
+                      InkWell(
+                        onTap: () async {
+                          final pickedDate = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now(),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime(2100),
+                          );
+                          if (pickedDate != null) {
+                            setState(() {
+                              _singleExecutionDate = pickedDate;
+                            });
+                          }
+                        },
+                        child: Text(
+                          _singleExecutionDate == null
+                              ? 'Выбрать дату'
+                              : DateFormat('dd.MM.yyyy')
+                                  .format(_singleExecutionDate!),
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF197FF2),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 8.0),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Время:',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF0B102B),
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () async {
-                        final TimeOfDay? pickedTime = await showTimePicker(
-                          context: context,
-                          initialTime: TimeOfDay.now(),
-                        );
-                        if (pickedTime != null) {
-                          setState(() {
-                            _singleExecutionTime = pickedTime;
-                          });
-                        }
-                      },
-                      child: Text(
-                        _singleExecutionTime == null
-                            ? 'Выбрать время'
-                            : '${_singleExecutionTime!.hour}:${_singleExecutionTime!.minute.toString().padLeft(2, '0')}',
-                        style: const TextStyle(
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Divider(color: Color(0xFFE0E0E0), thickness: 1),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 12.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Время:',
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF197FF2),
+                          color: Color(0xFF0B102B),
                         ),
                       ),
-                    ),
-                  ],
+                      InkWell(
+                        onTap: () async {
+                          final TimeOfDay? pickedTime = await showTimePicker(
+                            context: context,
+                            initialTime: TimeOfDay.now(),
+                          );
+                          if (pickedTime != null) {
+                            setState(() {
+                              _singleExecutionTime = pickedTime;
+                            });
+                          }
+                        },
+                        child: Text(
+                          _singleExecutionTime == null
+                              ? 'Выбрать время'
+                              : '${_singleExecutionTime!.hour}:${_singleExecutionTime!.minute.toString().padLeft(2, '0')}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF197FF2),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

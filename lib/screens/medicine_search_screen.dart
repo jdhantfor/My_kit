@@ -15,18 +15,15 @@ class MedicineRepository {
     PostgreSQLConnection conn,
     String query,
   ) async {
-    const limit = 20;
     if (conn.isClosed) {
       throw PostgreSQLException("Connection is not open");
     }
     final results = await conn.query(
       'SELECT id, "Name" FROM "Medicines" '
       'WHERE LOWER("Name") LIKE LOWER(@query || \'%\') '
-      'ORDER BY "Name" '
-      'LIMIT @limit',
+      'ORDER BY "Name"',
       substitutionValues: {
         'query': query,
-        'limit': limit,
       },
     );
     return results
@@ -152,17 +149,32 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
         ),
         centerTitle: false,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 16, right: 28, bottom: 14),
+            child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                suffixIcon: _searchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, color: Colors.grey),
+                        onPressed: () {
+                          setState(() {
+                            _searchController.clear();
+                            _searchMedicines('');
+                          });
+                        },
+                      )
+                    : null,
                 hintText: 'Введите название препарата',
+                hintStyle: const TextStyle(color: Colors.grey),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
+                  borderRadius: BorderRadius.circular(16.0),
                 ),
+                filled: true,
+                fillColor: Colors.white,
               ),
               onChanged: (text) {
                 _searchMedicines(text);
@@ -175,86 +187,148 @@ class _MedicineSearchScreenState extends State<MedicineSearchScreen> {
                 color: Color(0xFF0B102B),
               ),
             ),
-            const SizedBox(height: 16.0),
-            Expanded(
-              child: ListView.separated(
-                itemCount: _medicines.length,
-                itemBuilder: (context, index) {
-                  final medicine = _medicines[index];
-                  return ListTile(
-                    title: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            medicine.name,
-                            style: medicine.id == -2
-                                ? const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF197FF2),
-                                  )
-                                : const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF0B102B),
+          ),
+          Expanded(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 4.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24.0),
+                      ),
+                      child: ListView.separated(
+                        itemCount: _medicines.length,
+                        itemBuilder: (context, index) {
+                          final medicine = _medicines[index];
+                          return ListTile(
+                            title: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              TableMethodScreen(
+                                            name: medicine.name,
+                                            userId: widget.userId,
+                                            courseId: widget.courseId,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child: Text(
+                                      medicine.name,
+                                      style: medicine.id == -2
+                                          ? const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w500,
+                                              color: Color(0xFF197FF2),
+                                            )
+                                          : const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w500,
+                                              color: Color(0xFF0B102B),
+                                            ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
-                            overflow: TextOverflow.ellipsis,
+                                ),
+                                if (medicine.id == -1) const SizedBox(),
+                                if (medicine.id == -2)
+                                  InkWell(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              TableMethodScreen(
+                                            name: medicine.name,
+                                            userId: widget.userId,
+                                            courseId: widget.courseId,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child: const Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: Color(0xFF0B102B),
+                                      size: 16,
+                                    ),
+                                  ),
+                                if (medicine.id != -1 && medicine.id != -2)
+                                  InkWell(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              TableMethodScreen(
+                                            name: medicine.name,
+                                            userId: widget.userId,
+                                            courseId: widget.courseId,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    child: const Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: Color(0xFF0B102B),
+                                      size: 16,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
+                        separatorBuilder: (context, index) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          child: Divider(
+                            color: Color(0xFFE0E0E0),
+                            thickness: 1,
                           ),
                         ),
-                        if (medicine.id == -1) const SizedBox(),
-                        if (medicine.id == -2)
-                          InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => TableMethodScreen(
-                                    name: medicine.name,
-                                    userId: widget.userId,
-                                    courseId: widget.courseId,
-                                  ),
-                                ),
-                              );
-                            },
-                            child: const Icon(
-                              Icons.arrow_forward_ios,
-                              color: Color(0xFF0B102B),
-                              size: 16,
-                            ),
-                          ),
-                        if (medicine.id != -1 && medicine.id != -2)
-                          InkWell(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => TableMethodScreen(
-                                    name: medicine.name,
-                                    userId: widget.userId,
-                                    courseId: widget.courseId,
-                                  ),
-                                ),
-                              );
-                            },
-                            child: const Icon(
-                              Icons.arrow_forward_ios,
-                              color: Color(0xFF0B102B),
-                              size: 16,
-                            ),
-                          ),
-                      ],
+                      ),
                     ),
-                  );
-                },
-                separatorBuilder: (context, index) => const Divider(
-                  color: Color(0xFFE0E0E0),
-                  thickness: 1,
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8.0),
+                SizedBox(
+                  height: double.infinity,
+                  width: 20,
+                  child: ListView.builder(
+                    itemCount: 33,
+                    itemBuilder: (context, index) {
+                      final letter = String.fromCharCode(1040 + index);
+                      return GestureDetector(
+                        onVerticalDragUpdate: (details) {
+                          _searchMedicines(letter);
+                        },
+                        child: Container(
+                          alignment: Alignment.center,
+                          child: Text(
+                            letter,
+                            style: const TextStyle(
+                              color: Color(0xFF197FF2),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(width: 4.0),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -1,6 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Добавляем этот импорт
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:my_aptechka/screens/home_screen.dart';
 import 'package:provider/provider.dart';
@@ -13,31 +13,20 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Инициализация Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
-  // Заблокируем ориентацию экрана в портретном режиме
-  Future.delayed(const Duration(milliseconds: 300), () async {
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
-  });
-  
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
   try {
     await DatabaseService.initializeDatabase();
     await NotificationService.initialize();
   } catch (e) {
     print('Initialization error: $e');
   }
-  
   final userProvider = UserProvider();
   final authService = AuthService();
   final isLoggedIn = await authService.isLoggedIn(userProvider);
-  
   runApp(
     MultiProvider(
       providers: [
@@ -58,36 +47,31 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Аптечка',
       theme: ThemeData(
-        scaffoldBackgroundColor:
-            const Color.fromARGB(255, 247, 247, 247), // Задаем цвет фона
+        scaffoldBackgroundColor: const Color.fromARGB(255, 247, 247, 247),
         fontFamily: 'Commissioner',
         textTheme: const TextTheme(
           titleLarge: TextStyle(
-            fontFamily: 'Commissioner',
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
+              fontFamily: 'Commissioner',
+              fontWeight: FontWeight.bold,
+              fontSize: 20),
           bodyLarge: TextStyle(
-            fontFamily: 'Commissioner',
-            fontWeight: FontWeight.normal,
-            fontSize: 16,
-          ),
+              fontFamily: 'Commissioner',
+              fontWeight: FontWeight.normal,
+              fontSize: 16),
           bodyMedium: TextStyle(
-            fontFamily: 'Commissioner',
-            fontWeight: FontWeight.normal,
-            fontSize: 14,
-          ),
+              fontFamily: 'Commissioner',
+              fontWeight: FontWeight.normal,
+              fontSize: 14),
         ),
         appBarTheme: const AppBarTheme(
-          color: Colors.white,
+          color: Color.fromARGB(255, 247, 247, 247),
           elevation: 0,
           iconTheme: IconThemeData(color: Colors.black),
           titleTextStyle: TextStyle(
-            fontFamily: 'Commissioner',
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-            color: Colors.black,
-          ),
+              fontFamily: 'Commissioner',
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+              color: Colors.black),
         ),
       ),
       localizationsDelegates: const [
@@ -95,14 +79,9 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [
-        Locale('en', ''),
-        Locale('ru', ''),
-      ],
+      supportedLocales: const [Locale('en', ''), Locale('ru', '')],
       home: WelcomeScreen(isLoggedIn: isLoggedIn),
-      // Добавляем обработчик для уведомлений
-      navigatorKey:
-          NotificationService.navigatorKey, // Глобальный ключ навигатора
+      navigatorKey: NotificationService.navigatorKey,
       onGenerateRoute: (settings) {
         if (settings.name == '/today') {
           return MaterialPageRoute(builder: (context) => const HomeScreen());

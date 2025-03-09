@@ -2,20 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'action_or_habit_schedule_screen.dart';
 import 'action_schedule_box.dart';
-import 'custom_quantity_input.dart'; // Импортируем новый виджет
+import 'custom_quantity_input.dart';
 import 'package:my_aptechka/screens/database_service.dart';
+import 'package:my_aptechka/screens/home_screen.dart'; // Импорт HomeScreen
 import 'course_selection_box.dart';
 
 class ActionOrHabitSettingsScreen extends StatefulWidget {
   final String userId;
   final int courseId;
-  final String actionType; // Тип действия или привычки
+  final String actionType;
+  final String? customName;
 
   const ActionOrHabitSettingsScreen({
     super.key,
     required this.userId,
     required this.courseId,
     required this.actionType,
+    this.customName,
   });
 
   @override
@@ -23,7 +26,8 @@ class ActionOrHabitSettingsScreen extends StatefulWidget {
       ActionOrHabitSettingsScreenState();
 }
 
-class ActionOrHabitSettingsScreenState extends State<ActionOrHabitSettingsScreen> {
+class ActionOrHabitSettingsScreenState
+    extends State<ActionOrHabitSettingsScreen> {
   bool _isLifelong = true;
   DateTime _startDate = DateTime.now();
   int _durationValue = 30;
@@ -34,6 +38,7 @@ class ActionOrHabitSettingsScreenState extends State<ActionOrHabitSettingsScreen
   String _selectedNotification = 'Выбор';
   int? _selectedCourseId;
 
+  bool _isStartDateChanged = false; // Флаг для отслеживания изменения даты
   bool _showDurationPickerInside = false; // Флаг для показа выбора длительности
 
   @override
@@ -60,26 +65,33 @@ class ActionOrHabitSettingsScreenState extends State<ActionOrHabitSettingsScreen
     }
 
     final actionData = {
-      'name': widget.actionType,
+      'name': widget.customName ?? widget.actionType,
       'isLifelong': _isLifelong ? 1 : 0,
       'startDate': DateFormat('yyyy-MM-dd').format(_startDate),
-      'endDate': endDate != null ? DateFormat('yyyy-MM-dd').format(endDate) : null,
+      'endDate':
+          endDate != null ? DateFormat('yyyy-MM-dd').format(endDate) : null,
       'courseid': _selectedCourseId,
       'user_id': widget.userId,
       'quantity': _quantity,
-      'scheduleType': _selectedScheduleType,
+      'schedule_type': _selectedScheduleType,
       'mealTime': _selectedMealTime,
       'notification': _selectedNotification,
     };
 
     try {
-      final databaseService = DatabaseService(); // Получаем экземпляр синглтона
+      final databaseService = DatabaseService();
       await databaseService.addActionOrHabit(actionData, widget.userId);
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Действие/привычка добавлена')),
       );
-      Navigator.pop(context);
+
+      // Переход на HomeScreen с очисткой стека
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (Route<dynamic> route) => false,
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Ошибка: $e')),
@@ -97,6 +109,7 @@ class ActionOrHabitSettingsScreenState extends State<ActionOrHabitSettingsScreen
     if (pickedDate != null) {
       setState(() {
         _startDate = pickedDate;
+        _isStartDateChanged = true;
       });
     }
   }
@@ -115,7 +128,6 @@ class ActionOrHabitSettingsScreenState extends State<ActionOrHabitSettingsScreen
           height: 320,
           child: Column(
             children: [
-              // Заголовок
               Container(
                 padding: const EdgeInsets.all(16),
                 child: const Text(
@@ -126,7 +138,6 @@ class ActionOrHabitSettingsScreenState extends State<ActionOrHabitSettingsScreen
                   ),
                 ),
               ),
-              // Колеса выбора
               Expanded(
                 child: Stack(
                   children: [
@@ -149,7 +160,6 @@ class ActionOrHabitSettingsScreenState extends State<ActionOrHabitSettingsScreen
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Числа (1-7)
                         Expanded(
                           flex: 1,
                           child: ListWheelScrollView(
@@ -174,7 +184,6 @@ class ActionOrHabitSettingsScreenState extends State<ActionOrHabitSettingsScreen
                           ),
                         ),
                         const SizedBox(width: 16),
-                        // Единицы измерения (Дней/Недель)
                         Expanded(
                           flex: 1,
                           child: ListWheelScrollView(
@@ -203,7 +212,6 @@ class ActionOrHabitSettingsScreenState extends State<ActionOrHabitSettingsScreen
                   ],
                 ),
               ),
-              // Кнопка "Сохранить"
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: ElevatedButton(
@@ -211,10 +219,9 @@ class ActionOrHabitSettingsScreenState extends State<ActionOrHabitSettingsScreen
                     Navigator.pop(context);
                     setState(() {
                       if (_durationUnit == 'недель') {
-                        _durationValue *= 7; // Конвертируем недели в дни
-                        _durationUnit = 'дней'; // Всегда храним в днях
+                        _durationValue *= 7;
+                        _durationUnit = 'дней';
                       }
-                      print('Выбранная длительность: $_durationValue $_durationUnit');
                     });
                   },
                   style: ElevatedButton.styleFrom(
@@ -245,7 +252,7 @@ class ActionOrHabitSettingsScreenState extends State<ActionOrHabitSettingsScreen
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(widget.actionType),
+        title: Text(widget.customName ?? widget.actionType),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -255,52 +262,56 @@ class ActionOrHabitSettingsScreenState extends State<ActionOrHabitSettingsScreen
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Длительность действия/привычки
               const SizedBox(height: 16.0),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Длительность действия/привычки',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF6B7280),
-                    ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: const Text(
+                  'Длительность действия/привычки',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF6B7280),
                   ),
-                  const SizedBox(height: 4.0),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 4.0,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                ),
+              ),
+              const SizedBox(height: 4.0),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 4.0,
+                      offset: const Offset(0, 2),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 12.0,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Бессрочно',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0B102B),
-                                ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 12.0,
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Бессрочно',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF0B102B),
                               ),
-                              Switch(
+                            ),
+                            Transform.scale(
+                              scale:
+                                  0.8, // Уменьшаем размер как в TableTimeScreen
+                              child: Switch(
                                 value: _isLifelong,
                                 onChanged: (value) {
                                   setState(() {
@@ -308,115 +319,132 @@ class ActionOrHabitSettingsScreenState extends State<ActionOrHabitSettingsScreen
                                     _toggleDurationPicker();
                                   });
                                 },
-                                activeColor: const Color(0xFF197FF2),
+                                activeColor: Colors.white,
+                                activeTrackColor: const Color(0xFF197FF2),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        const Divider(
-                          color: Color(0xFFE0E0E0),
-                          thickness: 1,
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Divider(color: Color(0xFFE0E0E0), thickness: 1),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16.0,
+                          vertical: 12.0,
                         ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16.0,
-                            vertical: 12.0,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text(
-                                'Начало выполнения',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Color(0xFF0B102B),
-                                ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Начало выполнения',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF0B102B),
                               ),
-                              InkWell(
-                                onTap: () {
-                                  _showDatePicker(context);
-                                },
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      DateFormat('dd.MM.yyyy').format(_startDate),
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: Color(0xFF197FF2),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8.0),
-                                    const Icon(
-                                      Icons.chevron_right,
+                            ),
+                            InkWell(
+                              onTap: () {
+                                _showDatePicker(context);
+                              },
+                              child: Row(
+                                children: [
+                                  Text(
+                                    _isStartDateChanged
+                                        ? DateFormat('dd.MM.yyyy')
+                                            .format(_startDate)
+                                        : 'Сегодня',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
                                       color: Color(0xFF197FF2),
-                                      size: 24,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                  const SizedBox(width: 8.0),
+                                  const Icon(
+                                    Icons.chevron_right,
+                                    color: Color(0xFF197FF2),
+                                    size: 24,
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        if (_showDurationPickerInside && !_isLifelong)
-                          Column(
-                            children: [
-                              const Divider(
-                                color: Color(0xFFE0E0E0),
-                                thickness: 1,
+                      ),
+                      if (_showDurationPickerInside && !_isLifelong)
+                        Column(
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 16.0),
+                              child: Divider(
+                                  color: Color(0xFFE0E0E0), thickness: 1),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                                vertical: 12.0,
                               ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0,
-                                  vertical: 12.0,
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text(
-                                      'Срок выполнения',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                        color: Color(0xFF0B102B),
-                                      ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Срок выполнения',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF0B102B),
                                     ),
-                                    InkWell(
-                                      onTap: () {
-                                        _showDurationPicker(context);
-                                      },
-                                      child: Row(
-                                        children: [
-                                          Text(
-                                            '$_durationValue $_durationUnit',
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500,
-                                              color: Color(0xFF197FF2),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8.0),
-                                          const Icon(
-                                            Icons.chevron_right,
+                                  ),
+                                  InkWell(
+                                    onTap: () {
+                                      _showDurationPicker(context);
+                                    },
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          '$_durationValue $_durationUnit',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
                                             color: Color(0xFF197FF2),
-                                            size: 24,
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                        const SizedBox(width: 8.0),
+                                        const Icon(
+                                          Icons.chevron_right,
+                                          color: Color(0xFF197FF2),
+                                          size: 24,
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                      ],
-                    ),
+                            ),
+                          ],
+                        ),
+                    ],
                   ),
-                ],
+                ),
               ),
-  // Выбор количества (опционально)
               const SizedBox(height: 16.0),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  'Количество',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4.0),
               CustomQuantityInput(
                 quantity: _quantity,
                 onQuantityChanged: (value) {
@@ -425,16 +453,15 @@ class ActionOrHabitSettingsScreenState extends State<ActionOrHabitSettingsScreen
                   });
                 },
               ),
-              // Расписание выполнения
-              const SizedBox(height: 16.0),
+              const SizedBox(height: 4.0),
               ActionScheduleBox(
                 onNavigateToScheduleScreen: () async {
                   final result = await Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => ActionOrHabitScheduleScreen(
-                        name: widget.actionType,
-                        unit: 'unit', // Замените на актуальное значение
+                        name: widget.customName ?? widget.actionType,
+                        unit: 'unit',
                         userId: widget.userId,
                         courseId: widget.courseId,
                       ),
@@ -442,10 +469,10 @@ class ActionOrHabitSettingsScreenState extends State<ActionOrHabitSettingsScreen
                   );
                   if (result != null) {
                     setState(() {
-                      // Обновляем выбранные параметры расписания
                       _selectedScheduleType = result['scheduleType'] ?? 'daily';
                       _selectedMealTime = result['selectedMealTime'] ?? 'Выбор';
-                      _selectedNotification = result['selectedNotification'] ?? 'Выбор';
+                      _selectedNotification =
+                          result['selectedNotification'] ?? 'Выбор';
                     });
                   }
                 },
@@ -463,8 +490,7 @@ class ActionOrHabitSettingsScreenState extends State<ActionOrHabitSettingsScreen
                 },
                 selectedScheduleType: _selectedScheduleType,
               ),
-              // Выбор курса лечения
-              const SizedBox(height: 16.0),
+              const SizedBox(height: 4.0),
               CourseSelectionBox(
                 onSelectCourse: (int? newCourseId) {
                   setState(() {
@@ -473,8 +499,6 @@ class ActionOrHabitSettingsScreenState extends State<ActionOrHabitSettingsScreen
                 },
                 selectedCourseId: _selectedCourseId,
               ),
-
-              // Кнопка добавления действия/привычки
               const SizedBox(height: 16.0),
               ElevatedButton(
                 onPressed: _addActionOrHabit,

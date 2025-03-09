@@ -28,12 +28,16 @@ class _ScheduleBoxState extends State<ScheduleBox> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Прием',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF6B7280),
+        const SizedBox(height: 8.0), // Отступ сверху 8
+        const Padding(
+          padding: EdgeInsets.only(left: 16.0), // Отступ 16 слева
+          child: Text(
+            'Прием',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF6B7280),
+            ),
           ),
         ),
         const SizedBox(height: 8.0),
@@ -102,9 +106,12 @@ class _ScheduleBoxState extends State<ScheduleBox> {
                   ],
                 ),
               ),
-              const Divider(
-                color: Color(0xFFE0E0E0),
-                thickness: 1,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: const Divider(
+                  color: Color(0xFFE0E0E0),
+                  thickness: 1,
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -146,9 +153,12 @@ class _ScheduleBoxState extends State<ScheduleBox> {
                   ],
                 ),
               ),
-              const Divider(
-                color: Color(0xFFE0E0E0),
-                thickness: 1,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: const Divider(
+                  color: Color(0xFFE0E0E0),
+                  thickness: 1,
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(

@@ -36,63 +36,74 @@ class _TableMethodScreenState extends State<TableMethodScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w500,
-            color: Color.fromARGB(255, 54, 37, 37),
+            color: Color.fromARGB(255, 4, 4, 4),
           ),
         ),
         centerTitle: false,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 4.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 16.0),
             Expanded(
-              child: ListView.separated(
-                itemCount: _measurementUnits.length,
-                itemBuilder: (context, index) {
-                  final unit = _measurementUnits[index];
-                  return ListTile(
-                    title: Text(
-                      unit,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF0B102B),
-                      ),
-                    ),
-                    trailing: _selectedUnit == unit
-                        ? const Icon(
-                            Icons.check,
-                            color: Color(0xFF197FF2),
-                            size: 24,
-                          )
-                        : const Icon(
-                            Icons.chevron_right,
-                            color: Color(0xFF0B102B),
-                            size: 24,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24.0),
+                ),
+                child: ListView.separated(
+                  itemCount: _measurementUnits.length,
+                  itemBuilder: (context, index) {
+                    final unit = _measurementUnits[index];
+                    return InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedUnit = unit;
+                        });
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => TableTimeScreen(
+                              name: widget.name,
+                              unit: _selectedUnit!,
+                              userId: widget.userId,
+                              courseId: widget.courseId,
+                            ),
                           ),
-                    onTap: () {
-                      setState(() {
-                        _selectedUnit = unit;
-                      });
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TableTimeScreen(
-                            name: widget.name,
-                            unit: _selectedUnit!,
-                            userId: widget.userId,
-                            courseId: widget.courseId,
+                        );
+                      },
+                      child: ListTile(
+                        title: Text(
+                          unit,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF0B102B),
                           ),
                         ),
-                      );
-                    },
-                  );
-                },
-                separatorBuilder: (context, index) => const Divider(
-                  color: Color(0xFFE0E0E0),
-                  thickness: 1,
+                        trailing: _selectedUnit == unit
+                            ? const Icon(
+                                Icons.check,
+                                color: Color(0xFF197FF2),
+                                size: 24,
+                              )
+                            : const Icon(
+                                Icons.chevron_right,
+                                color: Color(0xFF0B102B),
+                                size: 24,
+                              ),
+                      ),
+                    );
+                  },
+                  separatorBuilder: (context, index) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: const Divider(
+                      color: Color(0xFFE0E0E0),
+                      thickness: 1,
+                    ),
+                  ),
                 ),
               ),
             ),

@@ -32,12 +32,16 @@ class _MeasurementDosageBoxState extends State<MeasurementDosageBox> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Время измерения',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF6B7280),
+        Padding(
+          padding: const EdgeInsets.only(
+              left: 16.0), // Отступ 16 слева для заголовка
+          child: const Text(
+            'Время измерения',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF6B7280),
+            ),
           ),
         ),
         const SizedBox(height: 8.0),
@@ -59,43 +63,72 @@ class _MeasurementDosageBoxState extends State<MeasurementDosageBox> {
               ...widget.timesAndDosages.asMap().entries.map((entry) {
                 final index = entry.key;
                 final timeAndDosage = entry.value;
-                return ListTile(
-                  title: Row(
-                    children: [
-                      Text(
-                        timeAndDosage[
-                            'time'], // Используем уже сохраненное время в формате 'HH:mm'
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF197FF2),
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0), // Отступы 16 для разделения пунктов
+                  child: ListTile(
+                    title: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              timeAndDosage['time'],
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF197FF2),
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () {
+                                _showTimePicker(context, index);
+                              },
+                              child: const Icon(
+                                Icons.chevron_right,
+                                color: Color(0xFF197FF2),
+                                size: 24,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 8.0),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete,
-                          color: Colors.red,
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.red,
+                          ),
+                          onPressed: () {
+                            widget.onTimeRemoved(index);
+                          },
                         ),
-                        onPressed: () {
-                          widget.onTimeRemoved(index);
-                        },
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 );
               }),
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    _showTimePicker(context);
-                  },
-                  child: const Text(
-                    '+ Добавить время измерения',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF197FF2),
+              if (widget.timesAndDosages
+                  .isNotEmpty) // Добавляем разделитель, если есть элементы
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0), // Отступы 16
+                  child: const Divider(color: Color(0xFFE0E0E0), thickness: 1),
+                ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal:
+                        16.0), // Отступы 16 для "+ Добавить время измерения"
+                child: Center(
+                  child: TextButton(
+                    onPressed: () {
+                      _showTimePicker(context);
+                    },
+                    child: const Text(
+                      '+ Добавить время измерения',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF197FF2),
+                      ),
                     ),
                   ),
                 ),
@@ -107,10 +140,17 @@ class _MeasurementDosageBoxState extends State<MeasurementDosageBox> {
     );
   }
 
-  void _showTimePicker(BuildContext context) async {
+  void _showTimePicker(BuildContext context, [int? index]) async {
     final TimeOfDay? pickedTime = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initialTime: index != null && widget.timesAndDosages.isNotEmpty
+          ? TimeOfDay(
+              hour: int.parse(
+                  widget.timesAndDosages[index]['time'].split(':')[0]),
+              minute: int.parse(
+                  widget.timesAndDosages[index]['time'].split(':')[1]),
+            )
+          : TimeOfDay.now(),
       builder: (context, child) {
         return Theme(
           data: ThemeData.light().copyWith(
@@ -123,22 +163,20 @@ class _MeasurementDosageBoxState extends State<MeasurementDosageBox> {
           ),
           child: Localizations.override(
             context: context,
-            locale: const Locale('ru', 'RU'), // Устанавливаем локаль на русский
+            locale: const Locale('ru', 'RU'),
             child: child!,
           ),
         );
       },
-      initialEntryMode:
-          TimePickerEntryMode.dial, // Используем dial для выбора времени
+      initialEntryMode: TimePickerEntryMode.dial,
     );
 
     if (pickedTime != null) {
       final formattedTime = formatTime(pickedTime);
-      widget.onTimeAdded(formattedTime);
-
-      // Если это первое время, передаем его как selectTime
-      if (widget.timesAndDosages.isEmpty) {
-        widget.onTimeAdded(formattedTime); // Передаем первое время
+      if (index != null) {
+        widget.onTimeUpdated(index, formattedTime);
+      } else {
+        widget.onTimeAdded(formattedTime);
       }
     }
   }

@@ -5,9 +5,8 @@ import 'measurement_dosage_box.dart';
 import 'measurement_schedule_box.dart';
 import 'measurement_schedule_screen.dart';
 import 'package:my_aptechka/screens/database_service.dart';
-import 'course_selection_box.dart'; // Импортируем новый виджет
-import 'dart:convert';
-
+import 'course_selection_box.dart';
+import 'package:my_aptechka/screens/home_screen.dart'; // Импорт HomeScreen
 
 class MeasurementSettingsScreen extends StatefulWidget {
   final String userId;
@@ -46,6 +45,9 @@ class MeasurementSettingsScreenState extends State<MeasurementSettingsScreen> {
   String _breakUnit = 'дней';
   String _selectedScheduleType = 'daily';
 
+  // Флаг для отслеживания изменения даты
+  bool _isStartDateChanged = false;
+
   @override
   void initState() {
     super.initState();
@@ -69,15 +71,16 @@ class MeasurementSettingsScreenState extends State<MeasurementSettingsScreen> {
       'time': _selectedMealTime,
       'selectTime': _times.isNotEmpty ? _times[0]['time'] : null,
       'startDate': DateFormat('yyyy-MM-dd').format(_startDate),
-      'endDate': endDate != null ? DateFormat('yyyy-MM-dd').format(endDate) : null,
+      'endDate':
+          endDate != null ? DateFormat('yyyy-MM-dd').format(endDate) : null,
       'isLifelong': _isLifelong ? 1 : 0,
       'schedule_type': _selectedScheduleType,
       'interval_value': _intervalValue,
-      'interval_unit': 'дней', // Всегда храним в днях
+      'interval_unit': 'дней',
       'selected_days_mask': _selectedDaysMask,
       'cycle_duration': _durationValueForSchedule,
       'cycle_break': _breakValue,
-      'cycle_break_unit': 'дней', // Всегда храним в днях
+      'cycle_break_unit': 'дней',
       'courseid': courseId,
       'user_id': widget.userId,
     };
@@ -87,7 +90,13 @@ class MeasurementSettingsScreenState extends State<MeasurementSettingsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Измерение добавлено')),
       );
-      Navigator.pop(context);
+
+      // После успешного добавления переходим на HomeScreen
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (Route<dynamic> route) => false, // Удаляем все предыдущие экраны
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Ошибка: $e')),
@@ -105,6 +114,7 @@ class MeasurementSettingsScreenState extends State<MeasurementSettingsScreen> {
     if (pickedDate != null) {
       setState(() {
         _startDate = pickedDate;
+        _isStartDateChanged = true;
       });
     }
   }
@@ -117,7 +127,6 @@ class MeasurementSettingsScreenState extends State<MeasurementSettingsScreen> {
           height: 320,
           child: Column(
             children: [
-              // Заголовок
               Container(
                 padding: const EdgeInsets.all(16),
                 child: const Text(
@@ -128,7 +137,6 @@ class MeasurementSettingsScreenState extends State<MeasurementSettingsScreen> {
                   ),
                 ),
               ),
-              // Колеса выбора
               Expanded(
                 child: Stack(
                   children: [
@@ -151,7 +159,6 @@ class MeasurementSettingsScreenState extends State<MeasurementSettingsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Числа (1-7)
                         Expanded(
                           flex: 1,
                           child: ListWheelScrollView(
@@ -176,7 +183,6 @@ class MeasurementSettingsScreenState extends State<MeasurementSettingsScreen> {
                           ),
                         ),
                         const SizedBox(width: 16),
-                        // Единицы измерения (Дней/Недель)
                         Expanded(
                           flex: 1,
                           child: ListWheelScrollView(
@@ -205,7 +211,6 @@ class MeasurementSettingsScreenState extends State<MeasurementSettingsScreen> {
                   ],
                 ),
               ),
-              // Кнопка "Сохранить"
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: ElevatedButton(
@@ -213,8 +218,8 @@ class MeasurementSettingsScreenState extends State<MeasurementSettingsScreen> {
                     Navigator.pop(context);
                     setState(() {
                       if (_durationUnit == 'недель') {
-                        _durationValue *= 7; // Конвертируем недели в дни
-                        _durationUnit = 'дней'; // Всегда храним в днях
+                        _durationValue *= 7;
+                        _durationUnit = 'дней';
                       }
                       print('Выбранный срок: $_durationValue $_durationUnit');
                     });
@@ -257,9 +262,16 @@ class MeasurementSettingsScreenState extends State<MeasurementSettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Длительность измерений',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              Padding(
+                padding: const EdgeInsets.only(left: 16.0),
+                child: const Text(
+                  'Длительность измерений',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF6B7280),
+                  ),
+                ),
               ),
               const SizedBox(height: 4.0),
               Container(
@@ -291,19 +303,29 @@ class MeasurementSettingsScreenState extends State<MeasurementSettingsScreen> {
                               color: Color(0xFF0B102B),
                             ),
                           ),
-                          Switch(
-                            value: _isLifelong,
-                            onChanged: (value) {
-                              setState(() {
-                                _isLifelong = value;
-                              });
-                            },
-                            activeColor: const Color(0xFF197FF2),
+                          Transform.scale(
+                            scale:
+                                0.8, // Уменьшаем размер как в TableTimeScreen
+                            child: Switch(
+                              value: _isLifelong,
+                              onChanged: (value) {
+                                setState(() {
+                                  _isLifelong = value;
+                                });
+                              },
+                              activeColor: Colors.white, // Белый кружок
+                              activeTrackColor:
+                                  const Color(0xFF197FF2), // Синяя дорожка
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    const Divider(color: Color(0xFFE0E0E0), thickness: 1),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child:
+                          const Divider(color: Color(0xFFE0E0E0), thickness: 1),
+                    ),
                     Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16.0, vertical: 12.0),
@@ -325,7 +347,10 @@ class MeasurementSettingsScreenState extends State<MeasurementSettingsScreen> {
                             child: Row(
                               children: [
                                 Text(
-                                  DateFormat('dd.MM.yyyy').format(_startDate),
+                                  _isStartDateChanged
+                                      ? DateFormat('dd.MM.yyyy')
+                                          .format(_startDate)
+                                      : 'Сегодня',
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w500,
@@ -347,7 +372,12 @@ class MeasurementSettingsScreenState extends State<MeasurementSettingsScreen> {
                     if (!_isLifelong)
                       Column(
                         children: [
-                          const Divider(color: Color(0xFFE0E0E0), thickness: 1),
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: const Divider(
+                                color: Color(0xFFE0E0E0), thickness: 1),
+                          ),
                           Padding(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16.0, vertical: 12.0),
@@ -420,16 +450,23 @@ class MeasurementSettingsScreenState extends State<MeasurementSettingsScreen> {
                     MaterialPageRoute(
                       builder: (context) => MeasurementScheduleScreen(
                         name: widget.measurementType,
-                        unit: 'unit', // Замените на актуальное значение
+                        unit: 'unit',
                         userId: widget.userId,
                         courseId: widget.courseId,
                       ),
                     ),
                   );
                   if (result != null) {
-                    // Обработка результата, если нужно
                     setState(() {
-                      // Обновите состояние на основе полученных данных
+                      _selectedScheduleType = result['scheduleType'] ?? 'daily';
+                      _intervalValue = result['intervalValue'] ?? 3;
+                      _intervalUnit = result['intervalUnit'] ?? 'дня';
+                      _selectedDaysMask = result['selectedDaysMask'] ?? 0;
+                      _durationValueForSchedule = result['durationValue'] ?? 7;
+                      _durationUnitForSchedule =
+                          result['durationUnit'] ?? 'дней';
+                      _breakValue = result['breakValue'] ?? 7;
+                      _breakUnit = result['breakUnit'] ?? 'дней';
                     });
                   }
                 },
@@ -445,11 +482,10 @@ class MeasurementSettingsScreenState extends State<MeasurementSettingsScreen> {
                     _selectedNotification = value;
                   });
                 },
-                selectedScheduleType: 'daily', // Замените на нужное значение
+                selectedScheduleType: _selectedScheduleType,
               ),
               const SizedBox(height: 16.0),
               CourseSelectionBox(
-                // Добавляем виджет для выбора курса
                 onSelectCourse: (int? newCourseId) {
                   setState(() {
                     _selectedCourseId = newCourseId;

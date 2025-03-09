@@ -1,6 +1,6 @@
 name: my_aptechka
 description: Моя аптечка
-version: 0.7.1  # Здесь указывайте версию
+version: 0.8.7+16  # Здесь указывайте версию
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -36,6 +36,7 @@ dependencies:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
+  logger: ^2.4.0
   cupertino_icons: ^1.0.8
   font_awesome_flutter: ^10.8.0
   postgres: ^2.5.2
@@ -128,6 +129,7 @@ flutter:
     - assets/priem_gray.svg
     - assets/priem.svg
     - assets/measss_gray.svg
+    - assets/izmerenie_gray.svg
 
   # To add assets to your application, add an assets section, like this:
   # assets:
