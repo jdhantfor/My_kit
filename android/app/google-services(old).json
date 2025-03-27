@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "964209422239",
+    "project_id": "aptechka0-1472b",
+    "storage_bucket": "aptechka0-1472b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:964209422239:android:153ea49fbf5344229117aa",
+        "android_client_info": {
+          "package_name": "com.example.aptechka"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIZPTZ-pvXaDzxP6IYoUY2yHqa82GHEgc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:964209422239:android:2cbecacc613280f79117aa",
+        "android_client_info": {
+          "package_name": "com.example.flutter_firebase_auth"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIZPTZ-pvXaDzxP6IYoUY2yHqa82GHEgc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

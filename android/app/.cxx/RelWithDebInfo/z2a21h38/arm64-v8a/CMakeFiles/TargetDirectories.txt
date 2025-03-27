@@ -1,0 +1,2 @@
+C:/Users/Admin/aptechka/android/app/.cxx/RelWithDebInfo/z2a21h38/arm64-v8a/CMakeFiles/edit_cache.dir
+C:/Users/Admin/aptechka/android/app/.cxx/RelWithDebInfo/z2a21h38/arm64-v8a/CMakeFiles/rebuild_cache.dir

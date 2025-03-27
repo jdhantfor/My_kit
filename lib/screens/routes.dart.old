@@ -1,0 +1,8 @@
+import 'package:flutter/material.dart';
+import 'package:my_aptechka/screens/medicine_search_screen.dart';
+import 'package:my_aptechka/screens/barcodes_screen.dart';
+
+Map<String, WidgetBuilder> routes = {
+  '/': (context) => const BarcodesScreen(),
+  '/medicine_search': (context) => const MedicineSearchScreen(),
+};

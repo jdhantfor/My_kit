@@ -1,0 +1,2 @@
+C:/Users/Admin/aptechka/android/app/.cxx/RelWithDebInfo/k5q532y1/x86/CMakeFiles/edit_cache.dir
+C:/Users/Admin/aptechka/android/app/.cxx/RelWithDebInfo/k5q532y1/x86/CMakeFiles/rebuild_cache.dir
