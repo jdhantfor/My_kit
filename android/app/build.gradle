@@ -1,0 +1,65 @@
+plugins {
+    id "com.android.application"
+    id 'com.google.gms.google-services'
+    id "kotlin-android"
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'androidx.camera:camera-core:1.2.0-alpha01'
+    implementation 'androidx.camera:camera-camera2:1.2.0-alpha01'
+    implementation 'androidx.camera:camera-lifecycle:1.2.0-alpha01'
+    implementation 'androidx.camera:camera-view:1.0.0-alpha29'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3'
+}
+
+android {
+    def keystorePropertiesFile = rootProject.file("key.properties")
+    def keystoreProperties = new Properties()
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
+    ndkVersion = "28.0.12433566"
+    namespace = "com.MyAptecka.my_aptechka"
+    compileSdk 35
+    
+    compileOptions {
+        coreLibraryDesugaringEnabled true 
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    kotlinOptions {
+        jvmTarget = 21
+    }
+
+    defaultConfig {
+        applicationId = "com.MyAptecka.my_aptechka"
+        minSdk = 26
+        targetSdk = flutter.targetSdkVersion
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+        multiDexEnabled true
+    }
+    signingConfigs {
+        release {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    namespace 'com.MyAptecka.my_aptechka'
+}
+
+flutter {
+    source = "../.."
+}

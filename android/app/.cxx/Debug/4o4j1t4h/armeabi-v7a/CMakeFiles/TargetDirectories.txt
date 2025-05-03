@@ -1,0 +1,2 @@
+C:/Users/Admin/aptechka/android/app/.cxx/Debug/4o4j1t4h/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/Admin/aptechka/android/app/.cxx/Debug/4o4j1t4h/armeabi-v7a/CMakeFiles/rebuild_cache.dir

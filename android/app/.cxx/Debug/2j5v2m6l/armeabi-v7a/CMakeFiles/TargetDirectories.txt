@@ -1,0 +1,2 @@
+E:/Flutter_my_kit/aptechka/aptechka/android/app/.cxx/Debug/2j5v2m6l/armeabi-v7a/CMakeFiles/edit_cache.dir
+E:/Flutter_my_kit/aptechka/aptechka/android/app/.cxx/Debug/2j5v2m6l/armeabi-v7a/CMakeFiles/rebuild_cache.dir
